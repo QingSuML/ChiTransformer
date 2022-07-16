@@ -44,10 +44,10 @@ https://user-images.githubusercontent.com/42019759/179184580-aa4ef919-2f0c-4a56-
 
 **Train**
 
-Training configuration is set at the beginning train file. The training pipeline is for (352, 1216) input. For input image of other sizes, you need to reconfigure accordingly.
+The training pipeline is for (352, 1216) input. For input image of other sizes, you need to reconfigure accordingly.
 
     ```shell
-    python train.py  
+   $ torchrun --nproc_per_node=8 train_distributed.py --crop --data_path [data pth] --png --stereo --split [split type]
     ```
     
 ### Citation
