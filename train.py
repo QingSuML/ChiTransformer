@@ -158,7 +158,7 @@ def main(args):
     
     val_loader = DataLoader(
         dataset_val, args.batch_size, sampler=sampler_val, #shuffle=True,
-        num_workers=args.num_workers, drop_last=False)
+        num_workers=args.num_workers, drop_last=True)
 
     if not args.no_ssim:
         ssim = SSIM()
