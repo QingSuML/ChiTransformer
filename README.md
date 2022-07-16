@@ -6,9 +6,9 @@
 
 https://user-images.githubusercontent.com/42019759/179184580-aa4ef919-2f0c-4a56-a5d9-a42ef990d8d8.mp4
 
-[//]: # '### Changelog'
-[//]: # '* [July 2022] Initial release of inference code and models'
-<img width="1009" alt="image" src="https://user-images.githubusercontent.com/42019759/179230580-62da8904-dc6d-4b69-8cf7-53152a18dd31.png">
+### Changelog
+* [July 2022] Initial release of inference code and models
+
 
 
 ### Setup 
