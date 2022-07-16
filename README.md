@@ -47,7 +47,7 @@ https://user-images.githubusercontent.com/42019759/179184580-aa4ef919-2f0c-4a56-
 The training pipeline is for (352, 1216) input. For input image of other sizes, you need to reconfigure accordingly.
 
     ```shell
-   $ torchrun --nproc_per_node=8 train_distributed.py --crop --data_path [data pth] --png --stereo --split [split type]
+   torchrun --nproc_per_node=8 train_distributed.py --crop --data_path [data pth] --png --stereo --split [split type]
     ```
     
 ### Citation
