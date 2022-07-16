@@ -243,7 +243,7 @@ def write_depth(path, depth, bits=1, absolute_depth=False):
     return
 
 
-def write_depth_color(path, depth, bits=1, absolute_depth=False):
+def write_depth_color(path, depth, absolute_depth=False):
     """Write depth map to pfm and png file.
 
     Args:
@@ -255,7 +255,6 @@ def write_depth_color(path, depth, bits=1, absolute_depth=False):
     if absolute_depth:
         out = depth
     else:
-        depth = 1/depth 
         depth_min = depth.min()
         depth_max = depth.max()
 

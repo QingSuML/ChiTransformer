@@ -118,7 +118,6 @@ def run(input_path, output_path, model_path, optimize=True):
                             .cpu()
                             .numpy()
                         )
-            prediction *= 256
 
         filename = os.path.join(
                     output_path,
