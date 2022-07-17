@@ -39,7 +39,7 @@ class ChiTransformer(nn.Module):
         self.start_layer_id=start_layer_id or depth - depth//2
         dcr_kwargs = dict(dim=embed_dim, d_ff=embed_dim*mlp_factor, 
                           height=attn_size[1], width=attn_size[0], cls_token=1)
-        self.DCR_layer = nn.ModuleList([DepthCueRectification_G(**dcr_kwargs)]*(depth-self.start_layer_id))
+        self.DCR_layer = nn.ModuleList([copy.deepcopy(DepthCueRectification_G(**dcr_kwargs)) for i in range(depth-self.start_layer_id)])
         
         
     def forward(self, x, y):
