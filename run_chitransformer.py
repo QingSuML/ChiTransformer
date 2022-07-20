@@ -6,26 +6,27 @@ import argparse
 
 
 from torchvision.transforms import Compose
-from model import DepthChiTransformer
+from model import ChiTransformerDepth
 from utils.inference_util import *
 
 
 
-def run(input_path, output_path, model_path, optimize=True):
+def run(input_path, output_path, model_path=None, optimize=True):
     net_w = 1216
     net_h = 352
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("device: %s" % device)
     
-    model = DepthChiTransformer(
-                path=model_path,
-                scale=0.00006016,
-                shift=0.00579,
+    model = ChiTransformerDepth(
                 invert=True,
                 non_negative=True,
                 enable_attention_hooks=False,
             )
+    
+    if model_path:
+        checkpoint = torch.load(model_path, map_location='cpu')
+        model.load_state_dict(checkpoint)
 
     normalization = NormalizeImage(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
 
