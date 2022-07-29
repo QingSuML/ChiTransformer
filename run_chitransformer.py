@@ -7,7 +7,7 @@ import argparse
 
 from torchvision.transforms import Compose
 from model import ChiTransformerDepth
-from utils.inference_util import *
+from utils import *
 
 
 

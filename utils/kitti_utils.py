@@ -6,6 +6,14 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
+def readlines(filename):
+    """Read all the lines in a text file and return as a list
+    """
+    with open(filename, 'r') as f:
+        lines = f.read().splitlines()
+    return lines
+
+
 def generate_depth_map(calib_dir, velo_filename, cam=2, vel_depth=False):
     """Generate a depth map from velodyne data
     """
@@ -17,7 +25,7 @@ def generate_depth_map(calib_dir, velo_filename, cam=2, vel_depth=False):
     velo2cam = np.vstack((velo2cam, np.array([0, 0, 0, 1.0])))
 
     # get image shape
-    im_shape = cam2cam["S_rect_02"][::-1].astype(np.int32)  #(375, 1242)
+    im_shape = cam2cam["S_rect_02"][::-1].astype(np.int32)
 
     # compute projection matrix velodyne->image plane
     # Velodynelaser scanner is registered w.r.t the reference camera coordinate system (camera 0)
@@ -108,57 +116,44 @@ def sub2ind(matrixSize, rowSub, colSub):
 
 
 class BackprojectDepth(nn.Module):
-    """Layer to transform a depth image into a point cloud
+    """Convert a depth image into a point cloud in camera coordinates
     """
-    def __init__(self, batch_size, height, width):
+    def __init__(self, height, width):
+        """ height: height of input image
+            width: width of input image
+            Not necessary the original resolution (375, 1242)
+        """
+        
         super(BackprojectDepth, self).__init__()
-
-        self.batch_size = batch_size
-        self.height = height
-        self.width = width
-
-        meshgrid = np.meshgrid(range(self.width), range(self.height), indexing='xy')
-        self.id_coords = np.stack(meshgrid, axis=0).astype(np.float32)
-        self.id_coords = nn.Parameter(torch.from_numpy(self.id_coords),
-                                      requires_grad=False)
-
-        self.ones = nn.Parameter(torch.ones(self.batch_size, 1, self.height * self.width),
-                                 requires_grad=False)
-
-        self.pix_coords = torch.unsqueeze(torch.stack(
-            [self.id_coords[0].view(-1), self.id_coords[1].view(-1)], 0), 0)
-        self.pix_coords = self.pix_coords.repeat(batch_size, 1, 1)
-        #homogeneous geometry
-        self.pix_coords = nn.Parameter(torch.cat([self.pix_coords, self.ones], 1),
-                                       requires_grad=False)
+        
+        meshgrid = torch.meshgrid(torch.arange(width), torch.arange(height), indexing='xy')
+        pix_coords = torch.stack((meshgrid[0].contiguous().view(-1), 
+                                 meshgrid[1].contiguous().view(-1)), 0)\
+                                .unsqueeze(0)\
+                                .type(torch.float32)
+        #homogeneous coordinates
+        pix_coords = torch.cat([pix_coords, torch.ones(1, 1, height*width)], 1)
+        
+        self.register_buffer('pix_coords', pix_coords) #[1, 3, h*w]
+        self.register_buffer('ones', torch.ones((1, 1, 1)))
 
     def forward(self, depth, inv_K):
-        cam_points = torch.matmul(inv_K[:, :3, :3], self.pix_coords)
-        cam_points = depth.view(self.batch_size, 1, -1) * cam_points
-        cam_points = torch.cat([cam_points, self.ones], 1)
+                             
+        B, _, h, w = depth.shape #[B, 1, h, w]
+        #inv_K [B, 4, 4]
+                             
+        cam_points = torch.matmul(inv_K[:, :3, :3], self.pix_coords) #[B, 3, h*w]
+        cam_points = depth.view(B, 1, -1) * cam_points
+                             
+        cam_points = torch.cat([cam_points, self.ones.expand(B, -1, h*w)], 1) # [B, 4, h*w]
 
         return cam_points
 
 
-
-
-def disp_to_depth(disp, min_depth, max_depth):
-    """Convert network's sigmoid output into depth prediction
-    The formula for this conversion is given in the 'additional considerations'
-    section of the paper.
-    """
-    min_disp = 1 / max_depth
-    max_disp = 1 / min_depth
-    scaled_disp = min_disp + (max_disp - min_disp) * disp
-    depth = 1 / scaled_disp
-    return scaled_disp, depth
-
-
-def get_translation_matrix(translation_vector):
-    """Convert a translation vector into a 4x4 transformation matrix
+def compute_translation_matrix(translation_vector):
+    """Convert a translation vector into a 4-by-4 transformation matrix
     """
     T = torch.zeros(translation_vector.shape[0], 4, 4).to(device=translation_vector.device)
-
     t = translation_vector.contiguous().view(-1, 3, 1)
 
     T[:, 0, 0] = 1
@@ -173,7 +168,7 @@ def get_translation_matrix(translation_vector):
 def rot_from_axisangle(vec):
     """Convert an axisangle rotation into a 4x4 transformation matrix
     (adapted from https://github.com/Wallacoloo/printipi)
-    Input 'vec' has to be Bx1x3
+    vec : [B, 1, 3]
     """
     angle = torch.norm(vec, 2, 2, True)
     axis = vec / (angle + 1e-7)
@@ -211,87 +206,38 @@ def rot_from_axisangle(vec):
 
     return rot
 
-
-class ConvBlock(nn.Module):
-    """Layer to perform a convolution followed by ELU
-    """
-    def __init__(self, in_channels, out_channels):
-        super(ConvBlock, self).__init__()
-
-        self.conv = Conv3x3(in_channels, out_channels)
-        self.nonlin = nn.ELU(inplace=True)
-
-    def forward(self, x):
-        out = self.conv(x)
-        out = self.nonlin(out)
-        return out
-
-
-class Conv3x3(nn.Module):
-    """Layer to pad and convolve input
-    """
-    def __init__(self, in_channels, out_channels, use_refl=True):
-        super(Conv3x3, self).__init__()
-
-        if use_refl:
-            self.pad = nn.ReflectionPad2d(1)
-        else:
-            self.pad = nn.ZeroPad2d(1)
-        self.conv = nn.Conv2d(int(in_channels), int(out_channels), 3)
-
-    def forward(self, x):
-        out = self.pad(x)
-        out = self.conv(out)
-        return out
-
-
+    
 class Project3D(nn.Module):
-    """Layer which projects 3D points into a camera with intrinsics K and at position T
+    """Projects cloud point into image coords with intrinsics K and translation T 
     """
-    def __init__(self, batch_size, height, width, eps=1e-7):
+    def __init__(self, height, width, eps=1e-7):
+        """ height: height of input image
+            width: width of input image
+            Not necessary the original resolution (375, 1242)
+        """
+        
         super(Project3D, self).__init__()
-
-        self.batch_size = batch_size
+        
         self.height = height
         self.width = width
         self.eps = eps
 
     def forward(self, points, K, T):
-        
+        #K, T:[B, 4, 4]
+        #x:[B, 4, h*w]
         #x' = K.T.x
-        P = torch.matmul(K, T)[:, :3, :]
+        B = points.shape[0]
+        P = (K @ T)[:, :3, :] #[B, 3, 4]
 
-        cam_points = torch.matmul(P, points)
-
-        pix_coords = cam_points[:, :2, :] / (cam_points[:, 2, :].unsqueeze(1) + self.eps)
-        pix_coords = pix_coords.view(self.batch_size, 2, self.height, self.width)
-        pix_coords = pix_coords.permute(0, 2, 3, 1)
+        cam_points = P @ points #[B, 3, h*w]
+        pix_coords = cam_points[:, :2, :] / (cam_points[:, 2, :].unsqueeze(1) + self.eps) #[B, 2, h*w]
+        pix_coords = pix_coords.view(B, 2, self.height, self.width) #[B, 2, h, w]
+        pix_coords = pix_coords.permute(0, 2, 3, 1) #[B, h, w, 2]
         pix_coords[..., 0] /= self.width - 1
         pix_coords[..., 1] /= self.height - 1
         pix_coords = (pix_coords - 0.5) * 2
+        
         return pix_coords
-
-
-def upsample(x):
-    """Upsample input tensor by a factor of 2
-    """
-    return F.interpolate(x, scale_factor=2, mode="nearest", align_corners=True)
-
-
-def get_smooth_loss(disp, img):
-    """Computes the smoothness loss for a disparity image
-    The color image is used for edge-aware smoothness
-    """
-    grad_disp_x = torch.abs(disp[:, :, :, :-1] - disp[:, :, :, 1:])
-    grad_disp_y = torch.abs(disp[:, :, :-1, :] - disp[:, :, 1:, :])
-
-    grad_img_x = torch.mean(torch.abs(img[:, :, :, :-1] - img[:, :, :, 1:]), 1, keepdim=True)
-    grad_img_y = torch.mean(torch.abs(img[:, :, :-1, :] - img[:, :, 1:, :]), 1, keepdim=True)
-
-    grad_disp_x *= torch.exp(-grad_img_x)
-    grad_disp_y *= torch.exp(-grad_img_y)
-
-    return grad_disp_x.mean() + grad_disp_y.mean()
 
 
 class SSIM(nn.Module):
@@ -327,22 +273,16 @@ class SSIM(nn.Module):
         return torch.clamp((1 - SSIM_n / SSIM_d) / 2, 0, 1)
 
 
-def compute_depth_errors(gt, pred):
-    """Computation of error metrics between predicted and ground truth depths
-    """
-    thresh = torch.max((gt / pred), (pred / gt))
-    a1 = (thresh < 1.25     ).float().mean()
-    a2 = (thresh < 1.25 ** 2).float().mean()
-    a3 = (thresh < 1.25 ** 3).float().mean()
-
-    rmse = (gt - pred) ** 2
-    rmse = torch.sqrt(rmse.mean())
-
-    rmse_log = (torch.log(gt) - torch.log(pred)) ** 2
-    rmse_log = torch.sqrt(rmse_log.mean())
-
-    abs_rel = torch.mean(torch.abs(gt - pred) / gt)
-
-    sq_rel = torch.mean((gt - pred) ** 2 / gt)
-
-    return abs_rel, sq_rel, rmse, rmse_log, a1, a2, a3
+def get_fp_weight(h, w):
+    
+    weight_v = torch.arange(h, 0., -1).unsqueeze(1).expand(-1, w)
+    weight_v = 2 * (weight_v / h) - 1.25
+    weight_v[weight_v < 0.] = 0.
+    weight_h = - (w/2. - torch.arange(w, 0., -1).unsqueeze(0).expand(h, -1)).abs() + w/2.
+    weight_h = 2 * (weight_h / (w/2.)) - 1.25
+    weight_h[weight_h < 0.] = 0.
+    
+    weight = weight_v*weight_h
+    weight = weight/weight.max()
+    
+    return weight

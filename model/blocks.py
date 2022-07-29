@@ -87,23 +87,23 @@ class SpectralDecomp(nn.Module):
         
         super(SpectralDecomp, self).__init__()
         
-        self.U = nn.Parameter(torch.empty(dim,dim))
+        self.U = nn.Parameter(torch.empty(dim, dim))
         
-        self.S1 = nn.Parameter(torch.empty(dim))
-        self.S2 = nn.Parameter(torch.empty(dim))
+        self.S1 = nn.Parameter(torch.empty(dim, 1))
+        self.S2 = nn.Parameter(torch.empty(dim, 1))
         
         self.reset_parameters()
         
     def reset_parameters(self):
         
-        init.constant_(self.S1, 1.)
-        init.constant_(self.S2, 1.)
+        init.kaiming_uniform_(self.S1, mode='fan_in', nonlinearity='relu')
+        init.kaiming_uniform_(self.S2, mode='fan_in', nonlinearity='relu')
         init.orthogonal_(self.U, gain=init.calculate_gain('linear'))
         
     def forward(self, x):
         #x: [B, N, d]
-        x1 = x @ self.U.T @ self.S1.square().diag() @ self.U #[B, N, d]
-        x2 = x @ self.U.T @ self.S2.square().diag() @ self.U
+        x1 = x @ self.U.T @ self.S1.squeeze(-1).abs().diag() @ self.U #[B, N, d]
+        x2 = x @ self.U.T @ self.S2.squeeze(-1).abs().diag() @ self.U
         
         return x1, x2
 
@@ -126,6 +126,10 @@ class CrossAttention_Sp(nn.Module):
         self.scale = dim ** -0.5
         
         self.device = device or torch.device('cpu')
+        
+        
+    def reset_parameters(self):
+        init.uniform_(self.pos_emb, a=0., b=1.)
 
     def forward(self, x, y, coords):
         

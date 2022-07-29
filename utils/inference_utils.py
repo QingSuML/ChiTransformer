@@ -255,6 +255,7 @@ def write_depth_color(path, depth, absolute_depth=False):
     if absolute_depth:
         out = depth
     else:
+        #depth = 1/depth 
         depth_min = depth.min()
         depth_max = depth.max()
 
@@ -265,7 +266,6 @@ def write_depth_color(path, depth, absolute_depth=False):
         else:
             out = np.zeros(depth.shape, dtype=depth.dtype)
             
-    out = out
     vmax = np.percentile(out, 100)
     
     normalizer = mpl.colors.Normalize(vmin=out.min(), vmax=vmax)
@@ -277,3 +277,4 @@ def write_depth_color(path, depth, absolute_depth=False):
     
     im = pil.fromarray(colormapped_im)
     im.save(path + ".png")
+    

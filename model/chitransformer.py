@@ -76,7 +76,7 @@ class ChitransformerDepth(nn.Module):
         
         super().__init__()
         
-        self.patch_embedder = Embedder(in_chans=3, layers=embed_layer)
+        self.patch_embedder = Embedder(in_chans=in_chans, layers=embed_layer)
         
         device = device or torch.device('cpu')
         
@@ -88,8 +88,8 @@ class ChitransformerDepth(nn.Module):
                                     device=device,
                                    )
         
-        scale = scale or 6.016 * 1e-5
-        shift = shift or 5.79 * 1e-3
+        scale = scale or 0.00006016
+        shift = shift or 0.00579
         
         self.refinenet = DepthRefineNet(invert=invert,
                                         scale=scale, 
@@ -118,47 +118,23 @@ class ChitransformerDepth(nn.Module):
 class ChitransformerDepth_MS(ChitransformerDepth):
     """
     """
-    def __init__(self,
-                 in_chans=3, 
-                 embed_layer=(3, 4, 9),
-                 in_chans_sa=1024,
-                 embed_dim=768,
-                 depth=12,
-                 sa_depth=6,
-                 dcr_module=DepthCueRectification_Sp,
-                 invert=True,
-                 scale=1.0,
-                 shift=0.0,
-                 size=[352, 1216], 
-                 output_scale=[0,1,2,3],
-                 device=None,
-                ):
+    def __init__(self, **kwargs):
         
-        super().__init__(in_chans=in_chans, 
-                         embed_layer=embed_layer, 
-                         in_chans_sa=in_chans_sa,
-                         embed_dim=embed_dim, 
-                         depth=depth, 
-                         sa_depth=sa_depth, 
-                         dcr_module=dcr_module,
-                         invert=invert, 
-                         scale=scale, 
-                         shift=shift, 
-                         size=size, 
-                         device=device,)
+        super().__init__(**kwargs)
         
         self.refinenet.head = [copy.deepcopy(self.refinenet.head) for _ in output_scale]
-        
-        self.refinenet.refinenet_ms_forward = types.MethodType(refinenet_ms_forward, self.refinenet)
+        self.refinenet.forward = types.MethodType(refinenet_ms_forward, self.refinenet)
         
     def forward(self, iml, imr):
         
+        depth ={}
         iml = self.patch_embedder(iml, layer_out=self.layer_out[:2])
         imr = self.patch_embedder.forward_one(imr)
         
         cuel = self.sa_dcr(iml[-1], imr, layer_out=self.layer_out[2:])
+        depth[("depth", 0)] = self.refinenet([iml[0], iml[1], cuel[0], cuel[1]]) 
         
-        return self.refinenet.refinenet_ms_forward([iml[0], iml[1], cuel[0], cuel[1]]) 
+        return depth
         
         
 def refinenet_ms_forward(self, inputs):
