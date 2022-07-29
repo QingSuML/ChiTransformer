@@ -35,7 +35,7 @@ https://user-images.githubusercontent.com/42019759/179184580-aa4ef919-2f0c-4a56-
 2) Run a stereo depth estimation model:
 
     ```shell
-    python run_chitdepth.py -i ./inputs -o ./outputs -m [weight path] --kitti_crop --absolute_depth 
+    python run_chitransformer.py -i ./inputs -o ./outputs -m [weight path] --kitti_crop --absolute_depth 
     ```
 
 
@@ -44,10 +44,10 @@ https://user-images.githubusercontent.com/42019759/179184580-aa4ef919-2f0c-4a56-
 
 **Train**
 
-The training pipeline is for (352, 1216) input. For input image of other sizes, you need to reconfigure accordingly.
+The training pipeline is for (352, 1216) input. For input image of other sizes, you need to reconfigure accordingly. For more training options, please refer to configs.py.
 
    ```shell
-   torchrun --nproc_per_node=8 train_distributed.py --crop --data_path [data pth] --png --stereo --split [split type]
+   torchrun --nproc_per_node=8 main.py --crop --data_path [data pth] --png --stereo --split [split type]
    ```
     
 ### Citation
