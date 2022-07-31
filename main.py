@@ -9,7 +9,7 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader, DistributedSampler
 
-import datasets
+from dataset.kittidataset import *
 
 import utils.distributed_utils as utils
 from configs import TrainConfigs
@@ -32,7 +32,7 @@ def main(args):
     device = torch.device(args.device) 
 
     #fixed seed for reproducibility
-    seed = args.seed + get_rank()
+    seed = args.seed + utils.get_rank()
     torch.manual_seed(seed)
     np.random.seed(seed)
     random.seed(seed)
@@ -51,7 +51,7 @@ def main(args):
     
     args.num_dcr = args.depth - args.sa_depth
     
-    chitransformer, criterion = builder(args)
+    chitransformer, criterion = build(args)
     
     chitransformer.to(device)
     criterion.to(device)
@@ -171,7 +171,7 @@ def main(args):
     if args.dataset == "kitti":
         fpath = os.path.join(os.path.dirname(__file__), "splits", args.split, "{}_files.txt")
         train_filenames = readlines(fpath.format("train"))[:subset_train]
-        val_filenames = readlines(fpath.format("val"))[:sub_val]
+        val_filenames = readlines(fpath.format("val"))[:subset_val]
         num_train_samples = len(train_filenames)
     else:
         raise NotImplementedError(f"{args.dataset} is not implemented.")
@@ -225,7 +225,7 @@ def main(args):
             args.start_epoch = checkpoint['epoch'] + 1
     
     if args.eval:
-        test_stats = evaluate(model, criterion, data_loader_val, device)
+        test_stats = evaluate(models, criterion, data_loader_val, device)
         if args.output_dir:
             utils.save_on_master(test_stats, output_dir / "eval.pth")
         return
@@ -245,7 +245,7 @@ def main(args):
             sampler_train.set_epoch(epoch)
             
         train_stats = train_one_epoch(
-            model, criterion, data_loader_train, optimizer, device, epoch, args.log_freq
+            models, criterion, data_loader_train, optimizer, device, epoch, args.log_freq,
             args.clip_max_norm)
         lr_scheduler.step()
         
@@ -263,12 +263,12 @@ def main(args):
                     'args': args,
                 }, checkpoint_path)
 
-        test_stats = evaluate(model, criterion, data_loader_val, args.log_freq, device)
+        test_stats = evaluate(models, criterion, data_loader_val, args.log_freq, device)
 
         log_stats = {**{f'train_{k}': v for k, v in train_stats.items()},
                      **{f'test_{k}': v for k, v in test_stats.items()},
                      'epoch': epoch,
-                     'n_parameters': n_parameters}
+                     'n_parameters': n_params}
         
         if utils.is_main_process():
             wandb.log(log_stats)

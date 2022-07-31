@@ -17,7 +17,7 @@ class TrainConfigs(object):
                                  default=[3, 4, 9])
         self.parser.add_argument("--frame_ids", nargs="+", type=int, help="frames to load", default=[0])
         self.parser.add_argument("--inchans", type=int, help="input image height", default=3)
-                                         default="Chitransformer")
+
         self.parser.add_argument("--img_scales", nargs="+", type=int, help="multiple scales for auxiliary loss",
                                  default=[0, 1, 2, 3])
         self.parser.add_argument("--invert", help="set for invert depth estimation", action="store_true")
@@ -78,7 +78,7 @@ class TrainConfigs(object):
         # ablation:
         self.parser.add_argument("--avg_reprojection", help="if set, uses average reprojection loss",
                                  action="store_true")
-        self.parser.add_argument("--edge_smoothness", help="freeze the patch embedder during training",
+        self.parser.add_argument("--edge_smoothness", help="set for edge aware depth smoothness",
                                  action="store_true")
         self.parser.add_argument("--disable_automasking", help="if set, doesn't do auto-masking", action="store_true")
         self.parser.add_argument("--no_ssim", help="if set, disables ssim in the loss", action="store_true")

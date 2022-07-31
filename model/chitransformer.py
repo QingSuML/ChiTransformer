@@ -122,6 +122,7 @@ class ChitransformerDepth_MS(ChitransformerDepth):
         
         super().__init__(**kwargs)
         
+        output_scale = [0,1,2,3]
         self.refinenet.head = [copy.deepcopy(self.refinenet.head) for _ in output_scale]
         self.refinenet.forward = types.MethodType(refinenet_ms_forward, self.refinenet)
         

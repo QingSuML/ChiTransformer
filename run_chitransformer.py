@@ -3,11 +3,13 @@ import glob
 import torch
 import cv2
 import argparse
+from functools import partial
 
 
 from torchvision.transforms import Compose
-from model import ChiTransformerDepth
-from utils import *
+from model.chitransformer import ChitransformerDepth
+from model.dcr import DepthCueRectification_Sp
+from utils.inference_util import *
 
 
 
@@ -18,11 +20,11 @@ def run(input_path, output_path, model_path=None, optimize=True):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("device: %s" % device)
     
-    model = ChiTransformerDepth(
-                invert=True,
-                non_negative=True,
-                enable_attention_hooks=False,
-            )
+    model = ChitransformerDepth( 
+                                device=device, 
+                                dcr_module=partial(DepthCueRectification_Sp, 
+                                layer_norm=False)
+                                ).to(device)
     
     if model_path:
         checkpoint = torch.load(model_path, map_location='cpu')

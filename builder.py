@@ -8,7 +8,8 @@ import torch.nn.functional as F
 from model import ChitransformerDepth, ChitransformerDepth_MS
 from model import DepthCueRectification_G, DepthCueRectification_Sp
 
-from utils import get_fp_weight
+from utils.kitti_utils import get_fp_weight, BackprojectDepth, Project3D, SSIM
+
 
 class StereoCriterion(nn.Module):
     
@@ -262,7 +263,7 @@ class StereoCriterion(nn.Module):
         
         losses=0.
         
-        for scale in img_scales:
+        for scale in self.img_scales:
             if self.source_scale:
                 depth_pred = outputs[("depth", 0, scale)] #[B, 1, h, w]
             else:

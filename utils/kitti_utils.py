@@ -14,6 +14,20 @@ def readlines(filename):
     return lines
 
 
+def get_fp_weight(h, w):
+    weight_v = torch.arange(h, 0., -1).unsqueeze(1).expand(-1, w)
+    weight_v = 2 * (weight_v / h) - 1.25
+    weight_v[weight_v < 0.] = 0.
+    weight_h = - (w/2. - torch.arange(w, 0., -1).unsqueeze(0).expand(h, -1)).abs() + w/2.
+    weight_h = 2 * (weight_h / (w/2.)) - 1.25
+    weight_h[weight_h < 0.] = 0.
+    
+    weight = weight_v*weight_h
+    weight = weight/weight.max()
+    
+    return weight
+
+
 def generate_depth_map(calib_dir, velo_filename, cam=2, vel_depth=False):
     """Generate a depth map from velodyne data
     """
@@ -271,18 +285,3 @@ class SSIM(nn.Module):
         SSIM_d = (mu_x ** 2 + mu_y ** 2 + self.C1) * (sigma_x + sigma_y + self.C2)
 
         return torch.clamp((1 - SSIM_n / SSIM_d) / 2, 0, 1)
-
-
-def get_fp_weight(h, w):
-    
-    weight_v = torch.arange(h, 0., -1).unsqueeze(1).expand(-1, w)
-    weight_v = 2 * (weight_v / h) - 1.25
-    weight_v[weight_v < 0.] = 0.
-    weight_h = - (w/2. - torch.arange(w, 0., -1).unsqueeze(0).expand(h, -1)).abs() + w/2.
-    weight_h = 2 * (weight_h / (w/2.)) - 1.25
-    weight_h[weight_h < 0.] = 0.
-    
-    weight = weight_v*weight_h
-    weight = weight/weight.max()
-    
-    return weight

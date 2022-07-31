@@ -48,6 +48,7 @@ The training pipeline is for (352, 1216) input. For input image of other sizes, 
 
    ```shell
    torchrun --nproc_per_node=8 main.py --crop --data_path [data pth] --png --stereo --split [split type]
+   --other configurations
    ```
     
 ### Citation
