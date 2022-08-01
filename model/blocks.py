@@ -126,6 +126,7 @@ class CrossAttention_Sp(nn.Module):
         self.scale = dim ** -0.5
         
         self.device = device or torch.device('cpu')
+        self.reset_parameters()
         
         
     def reset_parameters(self):

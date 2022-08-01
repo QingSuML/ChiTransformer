@@ -88,8 +88,8 @@ class ChitransformerDepth(nn.Module):
                                     device=device,
                                    )
         
-        scale = scale or 0.00006016
-        shift = shift or 0.00579
+        scale = scale or 1.0
+        shift = shift or 0.0
         
         self.refinenet = DepthRefineNet(invert=invert,
                                         scale=scale, 
