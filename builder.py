@@ -303,7 +303,7 @@ class StereoCriterion(nn.Module):
         
         orthog_reg = 0.
         
-        for module in model['dcr'].DCR:
+        for module in model.DCR:
             U = module.crs_layer.spectrum.U
             rank = U.shape[0]
             orthog_reg += F.mse_loss(U @ U.T, torch.diag(self.ones_vector), reduction='mean')
@@ -318,7 +318,7 @@ class StereoCriterion(nn.Module):
         
         hoyer_reg = 0.0
         
-        for module in model['dcr'].DCR:
+        for module in model.DCR:
             s1 = module.crs_layer.spectrum.S1
             s2 = module.crs_layer.spectrum.S2
             s_prod = s1 * s2
@@ -369,10 +369,10 @@ def build(args):
                   "invert" : args.invert, 
                   "scale" : args.scale, 
                   "shift" : args.shift, 
-                  "size" : (args.heigt, args.width),
+                  "size" : (args.height, args.width),
                   "device" : device,}
     
-    if len(args.img_scales) == 0:
+    if len(args.img_scales) == 1:
         model = ChitransformerDepth(**model_args)
     else:
         model = ChitransformerDepth_MS(**model_args)
@@ -385,9 +385,9 @@ def build(args):
             args.smoothness_weight = 1e-3
             
         if args.dcr_mode in ["sp", "spectrum"]:
-            weight_dict = {"reprojection_loss": 1.0, "fp_loss": 0.3, "guided_loss":0.5, 
+            weight_dict = {"reprojection_loss": 1.0,  "guided_loss":0.5, 
                            "orthog_reg": 1e-7, "hoyer_reg": 1e-4}
-            losses = ["reprojection_loss", "fp_loss", "guided_loss", "orthog_reg", "hoyer_reg"]
+            losses = ["reprojection_loss", "guided_loss", "orthog_reg", "hoyer_reg"]
         else:
             weight_dict = {"reprojection_loss": 1.0, "fp_loss": 0.3, "guided_loss":0.5}
             losses = ["reprojection_loss", "fp_loss", "guided_loss"]

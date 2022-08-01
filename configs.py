@@ -58,7 +58,7 @@ class TrainConfigs(object):
         self.parser.add_argument("--log_freq", type=int, help="number of batches between each tensorboard log",
                                  default=10)
         
-        self.parser.add_argument("--num_epochs", type=int, help="set number of epochs", default=30)
+        self.parser.add_argument("--epochs", type=int, help="set number of epochs", default=30)
         self.parser.add_argument("--num_workers", type=int, help="number of dataloader workers", default=0)
         
         self.parser.add_argument("--resume", type=str, help="resume the training process from a checkpoint", default='')

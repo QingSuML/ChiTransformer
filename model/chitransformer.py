@@ -103,12 +103,10 @@ class ChitransformerDepth(nn.Module):
         self.layer_out = [0, 1, 8, 11]
         
     def forward(self, iml, imr):
-        
+
         iml = self.patch_embedder(iml, layer_out=self.layer_out[:2])
         imr = self.patch_embedder.forward_one(imr)
-        
         cuel = self.sa_dcr(iml[-1], imr, layer_out=self.layer_out[2:])
-        
         depth = self.refinenet([iml[0], iml[1], cuel[0], cuel[1]]) 
         
         return depth
@@ -123,17 +121,15 @@ class ChitransformerDepth_MS(ChitransformerDepth):
         super().__init__(**kwargs)
         
         output_scale = [0,1,2,3]
-        self.refinenet.head = [copy.deepcopy(self.refinenet.head) for _ in output_scale]
+        self.refinenet.head = nn.ModuleList([copy.deepcopy(self.refinenet.head) for _ in output_scale])
         self.refinenet.forward = types.MethodType(refinenet_ms_forward, self.refinenet)
         
     def forward(self, iml, imr):
-        
-        depth ={}
         iml = self.patch_embedder(iml, layer_out=self.layer_out[:2])
         imr = self.patch_embedder.forward_one(imr)
         
         cuel = self.sa_dcr(iml[-1], imr, layer_out=self.layer_out[2:])
-        depth[("depth", 0)] = self.refinenet([iml[0], iml[1], cuel[0], cuel[1]]) 
+        depth = self.refinenet([iml[0], iml[1], cuel[0], cuel[1]]) 
         
         return depth
         

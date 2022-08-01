@@ -3,7 +3,7 @@ import numpy as np
 import skimage.transform
 import PIL.Image as pil
 from .kittibase import *
-from utils.kitti_tool import generate_depth_map
+from utils.kitti_utils import generate_depth_map
 
 class KittiDataset(KittiBase):
     """Superclass for different types of KITTI dataset loaders
@@ -76,14 +76,16 @@ class KittiDataset(KittiBase):
         depth_gt = generate_depth_map(calib_path, velo_filename, self.side_map[side])
         # mode=0: nearest-neighbor for downsampling
         # padding mode = 'constant', 'edge'
-
-        #depth_gt = skimage.transform.resize(
-        #   depth_gt, self.full_res_shape[::-1], order=0, preserve_range=True, mode='constant')
         h, w = depth_gt.shape
+
         if self.crop:
             top = h - self.height
             left = (w - self.width) // 2
             depth_gt = depth_gt[top : top + 352, left : left + 1216]
+        else:
+            depth_gt = skimage.transform.resize(depth_gt, 
+                                                self.full_res_shape[::-1], 
+                                                order=0, preserve_range=True, mode='constant')
 
         if do_flip:
             depth_gt = np.fliplr(depth_gt)

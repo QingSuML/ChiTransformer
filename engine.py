@@ -4,14 +4,15 @@ import torch
 import torch.nn as nn
 from typing import Iterable, Dict
 
-import utils 
+import utils.distributed_utils as utils
 
 
 def train_one_epoch(model: Dict, criterion: nn.Module,
                     data_loader: Iterable, optimizer: torch.optim.Optimizer,
-                    device: torch.device, epoch: int, log_freq, max_norm: float = 0):
+                    device: torch.device, epoch: int, log_freq, max_norm: float = 0, freeze_embedder=False):
     
-    model.train()
+    for net in model.values():
+        net.train()
     criterion.train()
     
     metric_logger = utils.LoaderwithLogger(delimiter="||")
@@ -22,17 +23,17 @@ def train_one_epoch(model: Dict, criterion: nn.Module,
             metric_logger.add_meter(error, utils.SmoothedValue(window_size=1, fmt='{value:.6f}'))
     
     header = 'Epoch:[{:03d}]'.format(epoch)
-
+    layer_out = [0, 1, 8, 11]
     for inputs in metric_logger.loadlog_every(data_loader, log_freq, header):
     
         for key, value in inputs.items():
             inputs[key] = value.to(device)
         
-        l_inputs = model["embedder"](inputs["color_aug", 'l', 0],  layer_out=model["layer_out"][:2])
+        l_inputs = model["embedder"](inputs["color_aug", 'l', 0],  layer_out=layer_out[:2])
         r_inputs = model["embedder"].forward_one(inputs["color_aug", 'r', 0])
         
-        if model["freeze_embedder"]:
-            cue_l = model["dcr"](l_inputs[-1].detach(), r_inputs.detach(), layer_out=model["layer_out"][2:])
+        if freeze_embedder:
+            cue_l = model["dcr"](l_inputs[-1].detach(), r_inputs.detach(), layer_out=layer_out[2:])
             outputs = model["refinenet"]([l_inputs[0].detach(), l_inputs[1].detach(), cue_l[0], cue_l[1]])
         else:
             cue_l = model["dcr"](l_inputs[-1], r_inputs, layer_out=model["layer_out"][2:])
@@ -88,7 +89,8 @@ def train_one_epoch(model: Dict, criterion: nn.Module,
 @torch.no_grad()
 def evaluate(model, criterion, data_loader, log_freq, device):
     
-    model.eval()
+    for net in model.values():
+        net.train()
     criterion.eval()
 
     metric_logger = utils.LoaderwithLogger(delimiter="||")
@@ -98,15 +100,15 @@ def evaluate(model, criterion, data_loader, log_freq, device):
             metric_logger.add_meter(error, utils.SmoothedValue(window_size=1, fmt='{value:.6f}'))
             
     header = 'Test:'
-    
+    layer_out = [0, 1, 8, 11]
     for inputs in metric_logger.loadlog_every(data_loader, log_freq, header):
         #during test, no DA
         for key, value in inputs.items():
             inputs[key] = value.to(device)
             
-        l_inputs = model["embedder"](inputs["color_aug", 'l', 0],  layer_out=model["layer_out"][:2])
+        l_inputs = model["embedder"](inputs["color_aug", 'l', 0],  layer_out=layer_out[:2])
         r_inputs = model["embedder"].forward_one(inputs["color_aug", 'r', 0])
-        cue_l = model["dcr"](l_inputs[-1], r_inputs, layer_out=model["layer_out"][2:])
+        cue_l = model["dcr"](l_inputs[-1], r_inputs, layer_out=layer_out[2:])
         outputs = model["refinenet"]([l_inputs[0], l_inputs[1], cue_l[0], cue_l[1]])
         
         loss_dict = criterion(inputs, outputs)

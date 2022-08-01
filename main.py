@@ -21,7 +21,7 @@ import wandb
 def main(args):    
     
     # scales: e.g. [0] or [0,1,2,3]
-    args.num_scales = len(args.scales)
+    args.num_scales = len(args.img_scales)
     
     utils.init_distributed_mode(args)
 
@@ -93,7 +93,7 @@ def main(args):
         n_trainable_params += sum(p.numel() for p in parameters_to_train[-1].parameters())
     
     
-    models['dcr'] = model_without_ddp.sa_dcr
+    models["dcr"] = model_without_ddp.sa_dcr
     
     parameters_to_train.append(
                 {
@@ -146,7 +146,7 @@ def main(args):
 
 
     """Load weights"""
-    if args.load_weights is not None:
+    if args.load_weights:
         checkpoint = torch.load(args.load_weights, map_location='cpu')
         model_without_ddp.load_state_dict(checkpoint)
     
@@ -165,19 +165,16 @@ def main(args):
     
     dataset = dataset_dict[args.dataset]
     
-    subset_train = 2000
-    subset_val = 250
-    
     if args.dataset == "kitti":
         fpath = os.path.join(os.path.dirname(__file__), "splits", args.split, "{}_files.txt")
-        train_filenames = readlines(fpath.format("train"))[:subset_train]
-        val_filenames = readlines(fpath.format("val"))[:subset_val]
+        train_filenames = readlines(fpath.format("train"))
+        val_filenames = readlines(fpath.format("val"))
         num_train_samples = len(train_filenames)
     else:
         raise NotImplementedError(f"{args.dataset} is not implemented.")
 
     img_ext = '.png' if args.png else '.jpg'
-    args.num_total_steps = (num_train_samples // (args.batch_size*args.world_size)) * args.num_epochs
+    args.num_total_steps = (num_train_samples // (args.batch_size*args.world_size)) * args.epochs
 
     dataset_train = dataset(args.data_path, train_filenames, args.height, args.width,
                             args.frame_ids, args.num_scales, crop=args.crop, start_scale=0, 
@@ -203,9 +200,9 @@ def main(args):
     data_loader_val = DataLoader(dataset_val, args.batch_size, sampler=sampler_val,
                                  num_workers=args.num_workers, drop_last=True)
     
-    if args.frozen_weights is not None:
+    if args.frozen_weights:
         checkpoint = torch.load(args.frozen_weights, map_location='cpu')
-        model_without_ddp.load_state_dict(checkpoint['model'])
+        model_without_ddp.load_state_dict(checkpoint)
         
     if args.resume:
         if args.resume.startswith('https'):
@@ -246,12 +243,11 @@ def main(args):
             
         train_stats = train_one_epoch(
             models, criterion, data_loader_train, optimizer, device, epoch, args.log_freq,
-            args.clip_max_norm)
+            args.clip_max_norm, freeze_embedder=args.freeze_embedder)
         lr_scheduler.step()
         
         if args.output_dir:
             checkpoint_paths = [output_dir / 'checkpoint.pth']
-            # extra checkpoint before LR drop and every 100 epochs
             if (epoch + 1) % args.lr_drop == 0 or (epoch + 1) % args.check_period == 0:
                 checkpoint_paths.append(output_dir / f'checkpoint{epoch:04}.pth')
             for checkpoint_path in checkpoint_paths:
@@ -271,7 +267,7 @@ def main(args):
                      'n_parameters': n_params}
         
         if utils.is_main_process():
-            wandb.log(log_stats)
+            #wandb.log(log_stats)
             if args.output_dir:
                 with (output_dir / "log.txt").open("a") as f:
                     f.write(json.dumps(log_stats) + "\n")
@@ -283,7 +279,7 @@ def main(args):
     
 if __name__ == '__main__':
     
-    wandb.init(project="ChiTransformer Training")
+    #wandb.init(project="ChiTransformer Training")
     
     configs = TrainConfigs()
     args = configs.parse()

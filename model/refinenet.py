@@ -1,4 +1,5 @@
 import copy
+from doctest import OutputChecker
 import torch
 import torch.nn as nn
 from functools import partial
@@ -66,6 +67,8 @@ class DepthRefineNet(nn.Module):
         
 
     def forward(self,inputs):
+
+        output = {}
         
         input0 = inputs[0]
         input1 = inputs[1]
@@ -88,7 +91,9 @@ class DepthRefineNet(nn.Module):
         if self.invert:
             depth = self.depth_calib(depth, self.scale, self.shift)
         
-        return depth.squeeze(1)
+        output[("depth", 0)] = depth.squeeze(1)
+        
+        return output
     
 
     def depth_calib(self, inv_depth, scale, shift):
@@ -118,7 +123,6 @@ class ProjectReadout(nn.Module):
         
         readout = x[:, 0].unsqueeze(1).expand_as(x[:, self.start_index :])
         features = torch.cat((x[:, self.start_index :], readout), -1)
-        print(features.shape)
 
         return self.project(features)
 
