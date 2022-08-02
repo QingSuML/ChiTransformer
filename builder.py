@@ -332,6 +332,21 @@ class StereoCriterion(nn.Module):
     def compute_depth_errors(self, pred, gt):
         """Computation of error metrics between predicted and ground truth depths
         """
+
+        mask = (gt > 0) & (gt <= self.max_depth)
+        crop_mask = torch.zeros_like(mask, device=self.device)
+
+        if not self.crop:
+            # garg/eigen crop
+            crop_mask[:, 153:371, 44:1197] = 1
+        else:
+            crop_mask[:, 130:351, 31:1184] = 1
+
+        mask = mask * crop_mask
+
+        gt = gt[mask]
+        pred = pred[mask]
+
         thresh = torch.max((gt / pred), (pred / gt))
         a1 = (thresh < 1.25     ).float().mean()
         a2 = (thresh < 1.25 ** 2).float().mean()
