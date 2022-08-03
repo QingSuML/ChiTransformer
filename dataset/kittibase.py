@@ -117,16 +117,6 @@ class KittiBase(data.Dataset):
                 else:
                     inputs[("color", side, self.start_scale - 1)] = self.get_color(folder, frame_index + i, side, do_flip)
 
-
-        # for i in self.frame_idxs:
-        #     if i == 's': 
-        #         other_side = {"r": "l", "l": "r"}[side]
-        #         inputs[( "color", other_side, self.start_scale - 1)] = \
-        #                         self.get_color(folder, frame_index, other_side, do_flip)
-        #     else:
-        #         inputs[("color", side, self.start_scale - 1)] = \
-        #                         self.get_color(folder, frame_index + i, side, do_flip)
-
         # adjusting intrinsics to match each scale in the pyramid
         if self.K is not None:
             for scale in range(self.start_scale, self.start_scale + self.num_scales):
