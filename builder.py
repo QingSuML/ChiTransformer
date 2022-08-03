@@ -408,12 +408,12 @@ def build(args):
             args.smoothness_weight = 1e-3
             
         if args.dcr_mode in ["sp", "spectrum"]:
-            weight_dict = {"reprojection_loss": 1.0,  "guided_loss":0.5, 
+            weight_dict = {"reprojection_loss": 1.0,
                            "orthog_reg": 1., "hoyer_reg": 0.1}
-            losses = ["reprojection_loss", "guided_loss", "orthog_reg", "hoyer_reg"]
+            losses = ["reprojection_loss", "orthog_reg", "hoyer_reg"]
         else:
-            weight_dict = {"reprojection_loss": 1.0, "guided_loss":0.5}
-            losses = ["reprojection_loss", "guided_loss"]
+            weight_dict = {"reprojection_loss": 1.0,}
+            losses = ["reprojection_loss",]
     else:
         raise NotImplementedError(f"{args.dataset} is not implemented.")
     
