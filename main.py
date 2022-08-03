@@ -56,15 +56,6 @@ def main(args):
     chitransformer.to(device)
     criterion.to(device)
     
-    grid_size = (args.height//16, args.width//16)
-    num_patches = grid_size[0]*grid_size[1]
-    
-    if args.rectilinear_epipolar_geometry:
-        for name, values in chitransformer.sa_dcr.DCR.named_parameters():
-            if "pos_emb" in name:
-                values = torch.tensor([0.,0.,0.,0.,0.,1.]).unsqueeze(-1).expand(num_patches, -1, -1)
-                values.requires_grad_(False).to(device)
-    
     if args.distributed:
         chitransformer = torch.nn.parallel.DistributedDataParallel(chitransformer, 
                                                           device_ids=[args.gpu], 

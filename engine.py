@@ -16,11 +16,11 @@ def train_one_epoch(model: Dict, criterion: nn.Module,
     criterion.train()
     
     metric_logger = utils.LoaderwithLogger(delimiter="||")
-    metric_logger.add_meter('lr', utils.SmoothedValue(window_size=1, fmt='{value:.6f}'))
+    metric_logger.add_meter('lr', utils.SmoothedValue(window_size=1, fmt='{value:.10f}'))
     
     if criterion.errors:
         for error in criterion.errors:
-            metric_logger.add_meter(error, utils.SmoothedValue(window_size=1, fmt='{value:.6f}'))
+            metric_logger.add_meter(error, utils.SmoothedValue(window_size=1, fmt='{value:.10f}'))
     
     header = 'Epoch:[{:03d}]'.format(epoch)
     layer_out = [0, 1, 8, 11]
@@ -97,7 +97,7 @@ def evaluate(model, criterion, data_loader, log_freq, device):
     
     if criterion.errors:
         for error in criterion.errors:
-            metric_logger.add_meter(error, utils.SmoothedValue(window_size=1, fmt='{value:.6f}'))
+            metric_logger.add_meter(error, utils.SmoothedValue(window_size=1, fmt='{value:.10f}'))
             
     header = 'Test:'
     layer_out = [0, 1, 8, 11]

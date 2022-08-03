@@ -105,11 +105,27 @@ class KittiBase(data.Dataset):
         side = line[2]
 
         for i in self.frame_idxs:
+            other_side = {"r": "l", "l": "r"}[side]
             if i == 's': 
-                other_side = {"r": "l", "l": "r"}[side]
-                inputs[( "color", other_side, self.start_scale - 1)] = self.get_color(folder, frame_index, other_side, do_flip)
+                if do_flip:
+                    inputs[( "color", side, self.start_scale - 1)] = self.get_color(folder, frame_index, other_side, do_flip)
+                else:
+                    inputs[( "color", other_side, self.start_scale - 1)] = self.get_color(folder, frame_index, other_side, do_flip)
             else:
-                inputs[("color", side, self.start_scale - 1)] = self.get_color(folder, frame_index + i, side, do_flip)
+                if do_flip:
+                    inputs[("color", other_side, self.start_scale - 1)] = self.get_color(folder, frame_index + i, side, do_flip)
+                else:
+                    inputs[("color", side, self.start_scale - 1)] = self.get_color(folder, frame_index + i, side, do_flip)
+
+
+        # for i in self.frame_idxs:
+        #     if i == 's': 
+        #         other_side = {"r": "l", "l": "r"}[side]
+        #         inputs[( "color", other_side, self.start_scale - 1)] = \
+        #                         self.get_color(folder, frame_index, other_side, do_flip)
+        #     else:
+        #         inputs[("color", side, self.start_scale - 1)] = \
+        #                         self.get_color(folder, frame_index + i, side, do_flip)
 
         # adjusting intrinsics to match each scale in the pyramid
         if self.K is not None:
@@ -143,10 +159,7 @@ class KittiBase(data.Dataset):
 
         if "s" in self.frame_idxs:
             stereo_T = np.eye(4, dtype=np.float32)
-            side_sign = -1 
-            baseline_sign = -1 if do_flip else 1
-            stereo_T[0, 3] = side_sign * baseline_sign * 0.1
-
+            stereo_T[0, 3] = - 0.1
             inputs["stereo_T"] = torch.from_numpy(stereo_T)
 
         return inputs

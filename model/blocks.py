@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.nn.init as init
+from timm.models.layers import trunc_normal_
 
 def get_abscoords(width, height):
     
@@ -44,8 +45,12 @@ class CrossAttention_G(nn.Module):
         self.gating = nn.Parameter(torch.tensor(1.))
         self.temp = nn.Parameter(torch.tensor(0.1))
         self.pos_emb = nn.Parameter(torch.zeros(num_patches, 6, 1))
-
         self.scale = dim ** -0.5
+        
+        self.reset_parameters()
+        
+    def reset_parameters(self):
+        trunc_normal_(self.pos_emb, a=0., b=1.)
 
     def forward(self, x, y, coords):
         
@@ -95,10 +100,9 @@ class SpectralDecomp(nn.Module):
         self.reset_parameters()
         
     def reset_parameters(self):
-        
-        init.kaiming_uniform_(self.S1, mode='fan_in', nonlinearity='relu')
-        init.kaiming_uniform_(self.S2, mode='fan_in', nonlinearity='relu')
-        init.orthogonal_(self.U, gain=init.calculate_gain('linear'))
+        init.kaiming_uniform_(self.S1, nonlinearity='relu')
+        init.kaiming_uniform_(self.S2, nonlinearity='relu')
+        init.xavier_uniform_(self.U)
         
     def forward(self, x):
         #x: [B, N, d]
@@ -120,17 +124,14 @@ class CrossAttention_Sp(nn.Module):
         
         self.gating = nn.Parameter(torch.tensor(1.))
         self.temp = nn.Parameter(torch.tensor(0.1))
-
         self.pos_emb = nn.Parameter(torch.zeros(num_patches, 6, 1))
-
         self.scale = dim ** -0.5
         
         self.device = device or torch.device('cpu')
         self.reset_parameters()
         
-        
     def reset_parameters(self):
-        init.uniform_(self.pos_emb, a=0., b=1.)
+        trunc_normal_(self.pos_emb, a=0., b=1.)
 
     def forward(self, x, y, coords):
         
@@ -227,11 +228,9 @@ class DepthCueRectification_Sp(DepthCueRectification_G):
     """
     
     def __init__(self, dim, d_ff, num_patches, 
-                 cls_token=1, dropout=0., 
-                 device=None, layer_norm=False):
+                **kwargs):
         
         super().__init__(dim, d_ff, num_patches, 
-                         cls_token=cls_token, dropout=dropout, 
-                         device=device, layer_norm=layer_norm)
+                         **kwargs)
         
-        self.crs_layer = CrossAttention_Sp(dim, num_patches, device)
+        self.crs_layer = CrossAttention_Sp(dim, num_patches, kwargs["device"])

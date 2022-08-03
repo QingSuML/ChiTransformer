@@ -305,7 +305,6 @@ class StereoCriterion(nn.Module):
         
         for module in model.DCR:
             U = module.crs_layer.spectrum.U
-            rank = U.shape[0]
             orthog_reg += F.mse_loss(U @ U.T, torch.diag(self.ones_vector), reduction='mean')
         
         orthog_reg /= self.num_dcr
@@ -392,6 +391,15 @@ def build(args):
     else:
         model = ChitransformerDepth_MS(**model_args)
 
+    grid_size = (args.height//16, args.width//16)
+    num_patches = grid_size[0]*grid_size[1]
+    
+    if args.rectilinear_epipolar_geometry:
+        for name, values in model.sa_dcr.DCR.named_parameters():
+            if "pos_emb" in name:
+                values.data = torch.tensor([0.,0.,0.,0.,0.,1.]).unsqueeze(-1).expand(22*76, -1, -1)
+                values.requires_grad_(False) #.to(device)
+
     if args.dataset == "kitti":
         args.max_depth = 80.0
         args.min_depth = 1e-3
@@ -401,11 +409,11 @@ def build(args):
             
         if args.dcr_mode in ["sp", "spectrum"]:
             weight_dict = {"reprojection_loss": 1.0,  "guided_loss":0.5, 
-                           "orthog_reg": 1e-7, "hoyer_reg": 1e-4}
+                           "orthog_reg": 1., "hoyer_reg": 0.1}
             losses = ["reprojection_loss", "guided_loss", "orthog_reg", "hoyer_reg"]
         else:
-            weight_dict = {"reprojection_loss": 1.0, "fp_loss": 0.3, "guided_loss":0.5}
-            losses = ["reprojection_loss", "fp_loss", "guided_loss"]
+            weight_dict = {"reprojection_loss": 1.0, "guided_loss":0.5}
+            losses = ["reprojection_loss", "guided_loss"]
     else:
         raise NotImplementedError(f"{args.dataset} is not implemented.")
     

@@ -6,6 +6,8 @@ import torch.nn.functional as F
 
 from timm.models.vision_transformer import Block
 from timm.models.vision_transformer_hybrid import _resnetv2
+from timm.models.layers import trunc_normal_
+
 from .blocks import *
 
 
@@ -68,6 +70,13 @@ class SA_DCR_Blocks(nn.Module):
                                 )
         
         self.norm = norm_layer(embed_dim)
+        
+        self.reset_parameters()
+        
+        
+    def reset_parameters(self):
+        trunc_normal_(self.pos_embed, std=.02)
+        trunc_normal_(self.cls_token, std=.02)
         
     
     def forward(self, src, tgt, layer_out=[8,11], before_sa=True, pos_supp=True):
