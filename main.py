@@ -81,7 +81,7 @@ def main(args):
                     "lr": args.learning_rate_pretrained
                 }
         )
-        n_trainable_params += sum(p.numel() for p in parameters_to_train[-1].parameters())
+        n_trainable_params += sum(p.numel() for p in parameters_to_train[-1]["params"])
     
     
     models["dcr"] = model_without_ddp.sa_dcr
