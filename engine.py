@@ -36,7 +36,7 @@ def train_one_epoch(model: Dict, criterion: nn.Module,
             cue_l = model["dcr"](l_inputs[-1].detach(), r_inputs.detach(), layer_out=layer_out[2:])
             outputs = model["refinenet"]([l_inputs[0].detach(), l_inputs[1].detach(), cue_l[0], cue_l[1]])
         else:
-            cue_l = model["dcr"](l_inputs[-1], r_inputs, layer_out=model["layer_out"][2:])
+            cue_l = model["dcr"](l_inputs[-1], r_inputs, layer_out=layer_out[2:])
             outputs = model["refinenet"]([l_inputs[0], l_inputs[1], cue_l[0], cue_l[1]])
         
         loss_dict = criterion(inputs, outputs, model["dcr"])
