@@ -158,16 +158,18 @@ class StereoCriterion(nn.Module):
             
     def loss_far_point(self, inputs, outputs):
         
-        mask = self.fp_weighted_mask(inputs[("color", 'l', 0)], 
-                                     inputs[("color", 'r', 0)]) #[B, h, w]
+        mask = self.fp_weighted_mask(inputs[("color", 'l', 0)],
+                                inputs[("color", 'r', 0)]) #[B, h, w]
         pred = outputs[("depth", 0)] #[B, h, w]
-        fp_to_optimise = pred[mask > 0.]
-        
-        #reuse the loaded tensor, gt is not used here
-        fp_value = inputs["depth_gt"].squeeze(1)[mask > 0.] + self.max_depth * 2.0 
+                
+        if mask.sum().item() != 0.:
+            fp_to_optimise = pred[mask > 0.]
+            #reuse the loaded tensor to save memory, gt is not used here
+            fp_value = inputs["depth_gt"].squeeze(1)[mask > 0.] + self.max_depth * 1.5
+            fp_loss = F.smooth_l1_loss(fp_to_optimise,  fp_value, reduction="mean")
+        else:
+            fp_loss = torch.tensor(0., device=self.device).detach()
 
-        fp_loss = F.smooth_l1_loss(fp_to_optimise,  fp_value, reduction="mean")
-            
         return {"fp_loss" : fp_loss}
 
 
@@ -406,14 +408,15 @@ def build(args):
         
         if args.edge_smoothness:
             args.smoothness_weight = 1e-3
-            
+        
+        # Hyperparameter change due to different parameter initialization method used
         if args.dcr_mode in ["sp", "spectrum"]:
-            weight_dict = {"reprojection_loss": 1.0,
+            weight_dict = {"reprojection_loss": 1.0, "fp_loss" : 1.0,
                            "orthog_reg": 1., "hoyer_reg": 0.1}
-            losses = ["reprojection_loss", "orthog_reg", "hoyer_reg"]
+            losses = ["reprojection_loss", "fp_loss", "orthog_reg", "hoyer_reg"]
         else:
-            weight_dict = {"reprojection_loss": 1.0,}
-            losses = ["reprojection_loss",]
+            weight_dict = {"reprojection_loss": 1.0, "fp_loss" : 1.0}
+            losses = ["reprojection_loss", "fp_loss"]
     else:
         raise NotImplementedError(f"{args.dataset} is not implemented.")
     
