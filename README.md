@@ -1,13 +1,13 @@
 ## ChiTransformer: Towards Reliable Stereo from Cues [CVPR 2022]
 
-### [[cvpr](https://openaccess.thecvf.com/content/CVPR2022/html/Su_Chitransformer_Towards_Reliable_Stereo_From_Cues_CVPR_2022_paper.html) | [arXiv](https://arxiv.org/abs/2203.04554)]
+### [[cvpr](https://openaccess.thecvf.com/content/CVPR2022/html/Su_Chitransformer_Towards_Reliable_Stereo_From_Cues_CVPR_2022_paper.html) | The latest version can be found at [arXiv](https://arxiv.org/abs/2203.04554)]
 
 [//]: # '<img width="1013" alt="image" src="https://user-images.githubusercontent.com/42019759/179230291-b3473a9c-763d-4776-9311-2f3de0d8d267.png">'
 
 https://user-images.githubusercontent.com/42019759/179184580-aa4ef919-2f0c-4a56-a5d9-a42ef990d8d8.mp4
 
 ### Changelog
-* [July 2022] Initial release of inference code and models
+* [Aug 2022] Shared parameters between the master and reference vit towers to make the model lighter with improved a1.
 
 
 
@@ -15,7 +15,7 @@ https://user-images.githubusercontent.com/42019759/179184580-aa4ef919-2f0c-4a56-
 
 1) Download the model weights and place them in the `weights` folder:
 
-- [dpt_hybrid-midas-501f0c75.pt](https://github.com/ISL-CV/Chi-Transformer/releases/download/1.0/chitransformer_kitti_301101.pt), [Mirror](https://drive.google.com/file/d/1_jLRcf96dnnzCz4F0pIQMvHy_TSVJ3p3/view?usp=sharing)
+- [chitransformer_sp_kitti_301101.pt](https://github.com/ISL-CV/Chi-Transformer/releases/download/1.0/chitransformer_kitti_301101.pt), [Mirror](https://drive.google.com/file/d/1_jLRcf96dnnzCz4F0pIQMvHy_TSVJ3p3/view?usp=sharing)
 
 
 2) Set up dependencies: 

@@ -149,7 +149,7 @@ class KittiBase(data.Dataset):
 
         if "s" in self.frame_idxs:
             stereo_T = np.eye(4, dtype=np.float32)
-            stereo_T[0, 3] = - 0.1
+            stereo_T[0, 3] = - 0.54
             inputs["stereo_T"] = torch.from_numpy(stereo_T)
 
         return inputs

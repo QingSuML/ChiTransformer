@@ -44,7 +44,8 @@ class TrainConfigs(object):
                                  choices=["kitti", "cityscapes", "argoverse"])
         self.parser.add_argument("--device", type=str, help="set training device", default='cuda')
         
-        self.parser.add_argument('--eval', help="set for evaluation", action="store_true")
+        self.parser.add_argument("--eval", help="set for evaluation", action="store_true")
+        self.parser.add_argument("--smoothness_weight", type=float, help = "set for smoothness weight", default=1e-3)
         
         self.parser.add_argument("--freeze_embedder", help = "freeze the patch embedder during training",
                                  action="store_true")
