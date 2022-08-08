@@ -1,6 +1,7 @@
 ## ChiTransformer: Towards Reliable Stereo from Cues [CVPR 2022]
 
-### [[cvpr](https://openaccess.thecvf.com/content/CVPR2022/html/Su_Chitransformer_Towards_Reliable_Stereo_From_Cues_CVPR_2022_paper.html) | The latest version can be found at [arXiv](https://arxiv.org/abs/2203.04554)]
+#### [[cvpr](https://openaccess.thecvf.com/content/CVPR2022/html/Su_Chitransformer_Towards_Reliable_Stereo_From_Cues_CVPR_2022_paper.html)]
+#### [The latest version can be found at [arXiv](https://arxiv.org/abs/2203.04554)]
 
 [//]: # '<img width="1013" alt="image" src="https://user-images.githubusercontent.com/42019759/179230291-b3473a9c-763d-4776-9311-2f3de0d8d267.png">'
 
@@ -73,3 +74,4 @@ The work builds on and uses code from [DPT](https://github.com/isl-org/DPT.git),
 ### License 
 
 MIT License 
+
