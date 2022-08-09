@@ -412,7 +412,7 @@ def build(args):
         # Hyperparameter change due to different parameter initialization method used
         if args.dcr_mode in ["sp", "spectrum"]:
             weight_dict = {"reprojection_loss": 1.0, "fp_loss" : 1e-3,
-                           "orthog_reg": 1., "hoyer_reg": 1e-4}
+                           "orthog_reg": 1., "hoyer_reg": 1e-3}
             losses = ["reprojection_loss", "fp_loss", "orthog_reg", "hoyer_reg"]
         else:
             weight_dict = {"reprojection_loss": 1.0, "fp_loss" : 1e-3}
