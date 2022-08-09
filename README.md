@@ -27,7 +27,10 @@ https://user-images.githubusercontent.com/42019759/179184580-aa4ef919-2f0c-4a56-
     pip install -r requirements.txt
     ```
 
-   The code was tested with Python 3.9, PyTorch 1.8.0, OpenCV 4.5.1, and timm 0.4.5
+   - The code was tested with Python 3.9, PyTorch 1.11.0, OpenCV 4.5.5, and timm 0.5.4
+   - **timm** of later version may not work due to function definition change.
+   
+   - **GPU memory** should be no smaller than 32GB.
 
 ### Usage 
 
