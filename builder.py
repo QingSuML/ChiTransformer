@@ -356,7 +356,7 @@ class StereoCriterion(nn.Module):
         rmse = (gt - pred) ** 2
         rmse = torch.sqrt(rmse.mean())
 
-        rmse_log = (torch.log(gt) - torch.log(pred)) ** 2
+        rmse_log = (torch.log(gt) - torch.log(pred + 1e-10)) ** 2
         rmse_log = torch.sqrt(rmse_log.mean())
 
         abs_rel = torch.mean(torch.abs(gt - pred) / gt)
