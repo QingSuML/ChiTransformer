@@ -191,8 +191,8 @@ def main(args):
     data_loader_val = DataLoader(dataset_val, args.batch_size, sampler=sampler_val,
                                  num_workers=args.num_workers, drop_last=True)
     
-    if args.frozen_weights:
-        checkpoint = torch.load(args.frozen_weights, map_location='cpu')
+    if args.load_weights:
+        checkpoint = torch.load(args.load_weights, map_location='cpu')
         model_without_ddp.load_state_dict(checkpoint)
         
     if args.resume:
