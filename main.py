@@ -139,7 +139,10 @@ def main(args):
     """Load weights"""
     if args.load_weights:
         checkpoint = torch.load(args.load_weights, map_location='cpu')
-        model_without_ddp.load_state_dict(checkpoint)
+        try:
+            model_without_ddp.load_state_dict(checkpoint['model'])
+        except:
+            model_without_ddp.load_state_dict(checkpoint)
     
     
     """Optimizer"""
@@ -190,10 +193,6 @@ def main(args):
     
     data_loader_val = DataLoader(dataset_val, args.batch_size, sampler=sampler_val,
                                  num_workers=args.num_workers, drop_last=True)
-    
-    if args.load_weights:
-        checkpoint = torch.load(args.load_weights, map_location='cpu')
-        model_without_ddp.load_state_dict(checkpoint)
         
     if args.resume:
         if args.resume.startswith('https'):
