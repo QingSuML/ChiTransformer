@@ -212,7 +212,7 @@ def main(args):
             args.start_epoch = checkpoint['epoch'] + 1
     
     if args.eval:
-        test_stats = evaluate(models, criterion, data_loader_val, device)
+        test_stats = evaluate(models, criterion, data_loader_val, args.log_freq, device)
         if args.output_dir:
             utils.save_on_master(test_stats, output_dir / "eval.pth")
         return
