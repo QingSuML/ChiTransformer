@@ -61,6 +61,8 @@ def main(args):
                                                           device_ids=[args.gpu], 
                                                           find_unused_parameters=True)   
         model_without_ddp = chitransformer.module
+    else:
+        model_without_ddp = chitransformer
     
                 
     models = {}
