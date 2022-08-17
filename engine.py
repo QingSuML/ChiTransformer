@@ -90,7 +90,7 @@ def train_one_epoch(model: Dict, criterion: nn.Module,
 def evaluate(model, criterion, data_loader, log_freq, device):
     
     for net in model.values():
-        net.train()
+        net.eval()
     criterion.eval()
 
     metric_logger = utils.LoaderwithLogger(delimiter="||")
