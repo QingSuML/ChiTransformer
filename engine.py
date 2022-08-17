@@ -106,8 +106,8 @@ def evaluate(model, criterion, data_loader, log_freq, device):
         for key, value in inputs.items():
             inputs[key] = value.to(device)
             
-        l_inputs = model["embedder"](inputs["color_aug", 'l', 0],  layer_out=layer_out[:2])
-        r_inputs = model["embedder"].forward_one(inputs["color_aug", 'r', 0])
+        l_inputs = model["embedder"](inputs["color", 'l', 0],  layer_out=layer_out[:2])
+        r_inputs = model["embedder"].forward_one(inputs["color", 'r', 0])
         cue_l = model["dcr"](l_inputs[-1], r_inputs, layer_out=layer_out[2:])
         outputs = model["refinenet"]([l_inputs[0], l_inputs[1], cue_l[0], cue_l[1]])
         
