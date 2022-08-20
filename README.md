@@ -8,9 +8,9 @@
 https://user-images.githubusercontent.com/42019759/179184580-aa4ef919-2f0c-4a56-a5d9-a42ef990d8d8.mp4
 
 ### Changelog
-* [Aug 2022] Implementation:
+* [Aug 2022] Implementation Updates:
     - Lighter model: shared parameters between the master and reference vit towers.
-    - Replace the reprojection W in polarized attention with the rounting mask
+    - Replace the reprojection W in polarized attention with the routing mask
     - Hyperparameters for U in spectral decomposition changed due to different initialization method used.
 
 
