@@ -1,6 +1,6 @@
 import torch
 import random
-from PIL import Image 
+from PIL import Image
 import numpy as np
 import torch.utils.data as data
 from torchvision import transforms
@@ -52,6 +52,9 @@ class KittiBase(data.Dataset):
         self.loader = pil_loader
         self.to_tensor = transforms.ToTensor()
 
+        self.master_side = "l"
+        self.switch_map = {"r": "l", "l": "r"}
+
         try:
             self.jitter_params = {'brightness': (.8, 1.2), 'contrast': (.8, 1.2), 'saturation': (.8, 1.2),
                                   'hue': (-.1, .1)}
@@ -95,6 +98,8 @@ class KittiBase(data.Dataset):
         inputs = {}
 
         do_color_aug = self.is_train and random.random() > 0.5
+            
+        
         do_flip = self.is_train and random.random() > 0.5
 
         line = self.filenames[index].split()
@@ -105,8 +110,8 @@ class KittiBase(data.Dataset):
         side = line[2]
 
         for i in self.frame_idxs:
-            other_side = {"r": "l", "l": "r"}[side]
-            if i == 's': 
+            other_side = self.switch_map[side]
+            if i == 's':
                 if do_flip:
                     inputs[( "color", side, self.start_scale - 1)] = self.get_color(folder, frame_index, other_side, do_flip)
                 else:
@@ -116,6 +121,16 @@ class KittiBase(data.Dataset):
                     inputs[("color", other_side, self.start_scale - 1)] = self.get_color(folder, frame_index + i, side, do_flip)
                 else:
                     inputs[("color", side, self.start_scale - 1)] = self.get_color(folder, frame_index + i, side, do_flip)
+
+
+        # for i in self.frame_idxs:
+        #     if i == 's':
+        #         other_side = {"r": "l", "l": "r"}[side]
+        #         inputs[( "color", other_side, self.start_scale - 1)] = \
+        #                         self.get_color(folder, frame_index, other_side, do_flip)
+        #     else:
+        #         inputs[("color", side, self.start_scale - 1)] = \
+        #                         self.get_color(folder, frame_index + i, side, do_flip)
 
         # adjusting intrinsics to match each scale in the pyramid
         if self.K is not None:
@@ -143,7 +158,10 @@ class KittiBase(data.Dataset):
         del inputs[("color_aug", 'r', self.start_scale - 1)]
 
         if self.load_depth:
-            depth_gt = self.get_depth(folder, frame_index, side, do_flip)
+            if do_flip: ### if flip, master_side is "r",else "l"
+                depth_gt = self.get_depth(folder, frame_index, self.switch_map[self.master_side], do_flip) ###
+            else: ###
+                depth_gt = self.get_depth(folder, frame_index, self.master_side, do_flip) ###
             inputs["depth_gt"] = np.expand_dims(depth_gt, 0)
             inputs["depth_gt"] = torch.from_numpy(inputs["depth_gt"].astype(np.float32))
 
