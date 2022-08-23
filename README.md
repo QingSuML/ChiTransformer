@@ -12,10 +12,7 @@ https://user-images.githubusercontent.com/42019759/186087073-dcbd096c-e850-4c64-
 
 
 ### Changelog
-* [Aug 2022] Implementation Updates:
-    - Lighter model: shared parameters between the master and reference vit towers.
-    - Replace the reprojection W in polarized attention with the routing mask
-=======
+
 * [Aug 2022] Implementation:
     - Please note that the parameters between the master and reference vit towers are shared.
     - Replace the reprojection W in polarized attention with the rounting mask
