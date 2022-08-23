@@ -23,7 +23,6 @@ https://user-images.githubusercontent.com/42019759/186087073-dcbd096c-e850-4c64-
 ### Setup 
 
 1) Download the model weights and place them in the `weights` folder:
-
 - [chitransofrmer_model_ssgm0_5_07272022.pth](https://github.com/ISL-CV/ChiTransformer/releases/download/0.0/chitransofrmer_model_ssgm0_5_07272022.pth)
 
 2) Set up dependencies: 
