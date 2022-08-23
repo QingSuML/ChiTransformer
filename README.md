@@ -16,8 +16,8 @@ https://user-images.githubusercontent.com/42019759/186087073-dcbd096c-e850-4c64-
 * [Aug 2022] Implementation:
     - Please note that the parameters between the master and reference vit towers are shared.
     - Replace the reprojection W in polarized attention with the rounting mask
-    - Hyperparameters for U in spectral decomposition changed due to different initialization method used.
-    - [New] Practically, the DCR module of chitransformer can be a plug-and-go component to transform a attention-based monocular depth estimator (e.g.) to a reliable cue-based binocular depth estimator within 3 epochs of extra training.
+    - Hyperparameters for U in spectral decomposition changed due to different initialization method used.   
+    - [**Highlight**] Practically, the DCR module of chitransformer can be a plug-and-go component to transform a attention-based monocular depth estimator (e.g. DPT) to a reliable cue-based binocular depth estimator within 3 epochs of extra training.
 
 
 ### Setup 
