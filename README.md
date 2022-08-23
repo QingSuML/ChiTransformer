@@ -5,13 +5,18 @@
 
 [//]: # '<img width="1013" alt="image" src="https://user-images.githubusercontent.com/42019759/179230291-b3473a9c-763d-4776-9311-2f3de0d8d267.png">'
 
-https://user-images.githubusercontent.com/42019759/179184580-aa4ef919-2f0c-4a56-a5d9-a42ef990d8d8.mp4
+
+
+https://user-images.githubusercontent.com/42019759/186087073-dcbd096c-e850-4c64-800b-88dc2d59ec7f.mp4
+
+
 
 ### Changelog
 * [Aug 2022] Implementation:
-    - Lighter model: shared parameters between the master and reference vit towers.
+    - Please note that the parameters between the master and reference vit towers are shared.
     - Replace the reprojection W in polarized attention with the rounting mask
     - Hyperparameters for U in spectral decomposition changed due to different initialization method used.
+    - [New] Practically, the DCR module of chitransformer can be a plug-and-go component to transform a attention-based monocular depth estimator (e.g.) to a reliable cue-based binocular depth estimator within 3 epochs of extra training.
 
 
 ### Setup 
