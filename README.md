@@ -62,7 +62,11 @@ The training pipeline is for (352, 1216) input. For input image of other sizes, 
    --other configurations
    ```
    
+![26_93_364_compare_1](https://user-images.githubusercontent.com/42019759/186490687-28468fac-4fbd-4a66-a421-cb3bcc17b5cf.png)
     
+![26_93_364_compare_2](https://user-images.githubusercontent.com/42019759/186490733-446cd8e5-7f92-44ae-8009-59c26291ac8a.png)
+
+![1003_34_48_compare](https://user-images.githubusercontent.com/42019759/186490776-09e8e8c8-e130-4088-9280-aee5236fc763.png)
 
 https://user-images.githubusercontent.com/42019759/186300034-573ff368-0d6e-4b43-b7fb-32a8bab0097c.mp4
 
