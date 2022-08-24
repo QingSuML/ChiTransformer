@@ -66,14 +66,15 @@ The training pipeline is for (352, 1216) input. For input image of other sizes, 
 
 https://user-images.githubusercontent.com/42019759/186300034-573ff368-0d6e-4b43-b7fb-32a8bab0097c.mp4
 
-
+Checkout the prediction on the whole sequence at: [https://youtu.be/Kr2pACAYWEc]
 
 https://user-images.githubusercontent.com/42019759/186300065-7b752029-f1da-40a8-aabd-f813dd6f93ce.mp4
 
-
+Checkout the prediction on the whole sequence at: [https://youtu.be/Ffn0nsLKrGk]
 
 https://user-images.githubusercontent.com/42019759/186300089-9e7106b3-53d6-4494-a195-b62907de175c.mp4
 
+Checkout the prediction on the whole sequence at: [https://youtu.be/Pehfnsm62FM]
 
 ### Citation
 
