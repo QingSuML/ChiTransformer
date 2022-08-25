@@ -49,7 +49,7 @@ In the video above, Chitransformer is compared with the state-of-the-art monocul
 
 ### Usage 
 
-**Inference**
+- **Inference**
 
 1) Place one or more input images in the folder `input`.
 
@@ -63,14 +63,14 @@ In the video above, Chitransformer is compared with the state-of-the-art monocul
 3) The results are written to the folder `output`.
 
 
-**Train**
+- **Train**   
 
-The training pipeline is for (352, 1216) input. For input image of other sizes, you need to reconfigure accordingly. For more training options, please refer to configs.py.
+- To fine tune ChiTransformer on a dataset with or without ground truth:   
 
-   ```shell
-   torchrun --nproc_per_node=8 main.py --crop --data_path [data pth] --png --stereo --split [split type]
-   --other configurations
+ ```shell
+   torchrun --nproc_per_node=8 main.py --load_weight MODEL_PATH --data_path DATA_PATH --png --stereo --edge_smoothness --split SPLIT_TYPE --img_scales 0 --dcr_mode sp --rectilinear_epipolar_geometry [--freeze_embedder] [--only_dcr] [--train_refinenet] --epochs EPOCHS --lr_drop LR_DROP_POINT --learning_rate 0.00001 [--invert] [--crop]
    ```
+Optional args should be set accordingly to achieve better performance. The current training pipeline is for (352, 1216) input. For input image of other sizes, you need to reconfigure accordingly. For more training options, please refer to $configs.py$.
  
 
 ### More qualitative comparisons with DPT
