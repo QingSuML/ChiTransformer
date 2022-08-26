@@ -77,15 +77,15 @@ Optional args should be set accordingly to achieve better performance. The curre
 
 ![26_93_364_compare_1](https://user-images.githubusercontent.com/42019759/186490687-28468fac-4fbd-4a66-a421-cb3bcc17b5cf.png)
 ![26_93_364_compare_2](https://user-images.githubusercontent.com/42019759/186490733-446cd8e5-7f92-44ae-8009-59c26291ac8a.png)
-Checkout the prediction on the whole sequence of KITTI_09_26_93 at: [https://youtu.be/Kr2pACAYWEc]
+Checkout the prediction on the whole sequence of KITTI_09_26_93 at: [https://youtu.be/WULXAFbuRqw]
 
 ![1003_34_48_compare](https://user-images.githubusercontent.com/42019759/186490776-09e8e8c8-e130-4088-9280-aee5236fc763.png)
-Checkout the prediction on the whole sequence of KITTI_10_03_34 at:[https://youtu.be/hEU8zkyIVPc]
+Checkout the prediction on the whole sequence of KITTI_10_03_34 at:[https://youtu.be/evif-Z8odYQ]
 
 [**More videos**]
-- Checkout the prediction on the whole sequence of KITTI_10_03_34 at: [https://youtu.be/hEU8zkyIVPc]
-- Checkout the prediction on the whole sequence of KITTI_09_26_104 at: [https://youtu.be/Ffn0nsLKrGk]
-- Checkout the prediction on the whole sequence of KITTI_09_29_71 at: [https://youtu.be/Pehfnsm62FM]
+- Checkout the prediction on the whole sequence of KITTI_10_03_34 at: [https://youtu.be/evif-Z8odYQ]
+- Checkout the prediction on the whole sequence of KITTI_09_26_104 at: [https://youtu.be/GbS2Sr6fMR0]
+- Checkout the prediction on the whole sequence of KITTI_09_29_71 at: [https://youtu.be/2yUIVlZQmW4]
 - Checkout the prediction on the whole sequence of KITTI_09_30_27 at: [https://youtu.be/hqtmCQF-w9g]
 
 
