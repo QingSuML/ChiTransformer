@@ -18,7 +18,7 @@ from engine import train_one_epoch, evaluate
 
 import wandb
 
-def main(args):
+def main(args):    
     
     # scales: e.g. [0] or [0,1,2,3]
     args.num_scales = len(args.img_scales)
@@ -29,7 +29,7 @@ def main(args):
     output_dir = Path(args.output_dir)
     
     #default: "cuda"
-    device = torch.device(args.device)
+    device = torch.device(args.device) 
 
     #fixed seed for reproducibility
     seed = args.seed + utils.get_rank()
@@ -57,9 +57,9 @@ def main(args):
     criterion.to(device)
     
     if args.distributed:
-        chitransformer = torch.nn.parallel.DistributedDataParallel(chitransformer,
-                                                          device_ids=[args.gpu],
-                                                          find_unused_parameters=True)
+        chitransformer = torch.nn.parallel.DistributedDataParallel(chitransformer, 
+                                                          device_ids=[args.gpu], 
+                                                          find_unused_parameters=True)   
         model_without_ddp = chitransformer.module
     
                 
@@ -92,6 +92,9 @@ def main(args):
                                 if params.requires_grad],
                     }
         )
+        n_trainable_params += sum(p.numel() for p in parameters_to_train[-1]["params"])
+        
+        parameters_to_train.append({"params": models['dcr'].pos_embed, "lr": args.learning_rate_pretrained})
         n_trainable_params += sum(p.numel() for p in parameters_to_train[-1]["params"])
     else:
         for params in models['dcr'].DCR.parameters():
@@ -156,7 +159,7 @@ def main(args):
                           weight_decay=args.weight_decay)
     """learning rate"""
     lr_scheduler = torch.optim.lr_scheduler.StepLR(
-        optimizer, args.lr_drop, gamma=0.1)
+        optimizer, args.lr_drop, gamma=0.1)    
     
 
     dataset_dict = {"kitti": KittiDataset,
@@ -177,8 +180,8 @@ def main(args):
     args.num_total_steps = (num_train_samples // (args.batch_size*args.world_size)) * args.epochs
 
     dataset_train = dataset(args.data_path, train_filenames, args.height, args.width,
-                            args.frame_ids, args.num_scales, crop=args.crop, start_scale=0,
-                            is_train=True, img_ext=img_ext)
+                            args.frame_ids, args.num_scales, crop=args.crop, start_scale=0, 
+                            is_train=True, load_pred=args.pre_pred, img_ext=img_ext)
     dataset_val = dataset(args.data_path, val_filenames, args.height, args.width,
                           args.frame_ids, args.num_scales, crop=args.crop, start_scale=0,
                           is_train=False, img_ext=img_ext)
@@ -232,9 +235,9 @@ def main(args):
     for epoch in range(args.start_epoch, args.epochs):
         
         if args.distributed:
-            #In distributed mode, calling the set_epoch() method at the beginning of each epoch
-            #before creating the DataLoader iterator is necessary to make shuffling work properly
-            #across multiple epochs.
+            #In distributed mode, calling the set_epoch() method at the beginning of each epoch 
+            #before creating the DataLoader iterator is necessary to make shuffling work properly 
+            #across multiple epochs. 
             sampler_train.set_epoch(epoch)
             
         train_stats = train_one_epoch(
@@ -260,7 +263,9 @@ def main(args):
         log_stats = {**{f'train_{k}': v for k, v in train_stats.items()},
                      **{f'test_{k}': v for k, v in test_stats.items()},
                      'epoch': epoch,
-                     'n_parameters': n_params}
+                     'n_parameters': n_params,
+                     **criterion.weight_dict,
+                     'smoothness': args.smoothness_weight}
         
         if utils.is_main_process():
             #wandb.log(log_stats)

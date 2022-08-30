@@ -44,11 +44,12 @@ class TrainConfigs(object):
                                  choices=["kitti", "cityscapes", "argoverse"])
         self.parser.add_argument("--device", type=str, help="set training device", default='cuda')
         
-        self.parser.add_argument("--eval", help="set for evaluation", action="store_true")
-        self.parser.add_argument("--smoothness_weight", type=float, help = "set for smoothness weight", default=1e-3)
+        self.parser.add_argument('--eval', help="set for evaluation", action="store_true")
         
         self.parser.add_argument("--freeze_embedder", help = "freeze the patch embedder during training",
                                  action="store_true")
+        self.parser.add_argument("--freeze_dcr_ca", help = "freeze the DCR cross attention module",
+                                 action="store_true")                      
         self.parser.add_argument("--frozen_weights", type=str, help="weight directory", default='')
         
         self.parser.add_argument("--learning_rate", type=float, help="set learning rate", default=1e-4)
@@ -61,7 +62,11 @@ class TrainConfigs(object):
         
         self.parser.add_argument("--epochs", type=int, help="set number of epochs", default=30)
         self.parser.add_argument("--num_workers", type=int, help="number of dataloader workers", default=0)
-        
+
+        self.parser.add_argument('--only_dcr', help="set dcr only for fine-tuning", action="store_true") 
+
+        self.parser.add_argument('--pre_pred', type=float, help="set for weight of guided loss in training", default=0.)
+
         self.parser.add_argument("--resume", type=str, help="resume the training process from a checkpoint", default='')
         
         self.parser.add_argument('--seed', type=int, help = "set seed for reproducibility", default=27)
@@ -70,7 +75,7 @@ class TrainConfigs(object):
         self.parser.add_argument("--split", type=str, help="which training split to use",
                                  choices=["eigen_zhou", "eigen_full", "benchmark"], default="eigen_full")
         self.parser.add_argument('--start_epoch', default=0, type=int, metavar='N',help='start epoch')
-        
+        self.parser.add_argument('--supervision', type=float, help="set for weight of supervision loss for training", default=0.)
         self.parser.add_argument("--train_refinenet", help="train refinenet", action="store_true")
         self.parser.add_argument("--train_self_attention", help="train self-attention layer", action="store_true")
         
@@ -91,7 +96,7 @@ class TrainConfigs(object):
         # training env:
         self.parser.add_argument("--dist_url", type=str, default='env://', help='url used to set up distributed training')
         self.parser.add_argument("--log_dir", type=str, help="log directory",
-                                 default=os.path.join(os.path.expanduser("./"), "tmp"))
+                                 default=os.path.join(os.path.expanduser("./"), "tmp"))                       
         self.parser.add_argument("--output_dir", type=str, help='folder to save checkpoints',
                                  default=os.path.join(file_dir, "output"))
         self.parser.add_argument("--world_size", type=int, default=1, help='number of distributed processes')       

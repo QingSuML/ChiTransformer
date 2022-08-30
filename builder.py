@@ -1,5 +1,6 @@
 import sys
 from functools import partial
+from syslog import LOG_SYSLOG
 
 import torch
 import torch.nn as nn
@@ -49,6 +50,8 @@ class StereoCriterion(nn.Module):
         
         if not self.no_ssim:
             self.ssim = SSIM()
+
+        self.grad_ssim = True
             
         self.min_depth = args.min_depth
         self.max_depth = args.max_depth
@@ -62,6 +65,8 @@ class StereoCriterion(nn.Module):
         
         if self.edge_smoothness:
             self.smoothness_weight = args.smoothness_weight
+        
+        self.guided_weight = 1.
         
         self.register_buffer("fp_weight", get_fp_weight(self.height, self.width))
         self.register_buffer("ones_vector", torch.ones(embed_dim))
@@ -97,6 +102,7 @@ class StereoCriterion(nn.Module):
             "reprojection_loss": self.loss_reprojection,
             "fp_loss": self.loss_far_point,
             "guided_loss": self.loss_guided,
+            "supervised_loss": self.loss_supervised,
             "orthog_reg": self.orthogonal_regularization,
             "hoyer_reg": self.hoyer_regularization
         }
@@ -155,10 +161,10 @@ class StereoCriterion(nn.Module):
                         
             return {"reprojection_loss" : losses}
             
-            
+
     def loss_far_point(self, inputs, outputs):
-        
-        mask = self.fp_weighted_mask(inputs[("color", 'l', 0)],
+    
+        mask = self.fp_weighted_mask(inputs[("color", 'l', 0)], 
                                 inputs[("color", 'r', 0)]) #[B, h, w]
         pred = outputs[("depth", 0)] #[B, h, w]
                 
@@ -217,7 +223,21 @@ class StereoCriterion(nn.Module):
 
         if not self.no_ssim:
             ssim_loss = self.ssim(pred, target).mean(1, True)
-            reprojection_loss = 0.85 * ssim_loss + 0.15 * l1_loss
+
+            if self.grad_ssim:
+                grad_pred_x = F.pad(torch.mean(torch.abs(pred[:, :, :, :-1] - pred[:, :, :, 1:]), 1, keepdim=True), (0,1,0,0), 'replicate')#[352, 1216]
+                grad_pred_y = F.pad(torch.mean(torch.abs(pred[:, :, :-1, :] - pred[:, :, 1:, :]), 1, keepdim=True), (0,0,0,1), 'replicate')#[352, 1216]
+                grad_pred = grad_pred_x + grad_pred_y
+
+                grad_tgt_x = F.pad(torch.mean(torch.abs(target[:, :, :, :-1] - target[:, :, :, 1:]), 1, keepdim=True), (0,1,0,0), 'replicate') #[352, 1215]
+                grad_tgt_y = F.pad(torch.mean(torch.abs(target[:, :, :-1, :] - target[:, :, 1:, :]), 1, keepdim=True), (0,0,0,1), 'replicate') #[352, 1216]
+                grad_tgt = grad_tgt_x + grad_tgt_y
+
+                ssim_grad_loss = self.ssim(grad_pred, grad_tgt).mean(1, True)
+
+                reprojection_loss = 0.4 * ssim_loss + 0.5 * ssim_grad_loss + 0.1 * l1_loss
+            else:
+                reprojection_loss = 0.85 * ssim_loss + 0.15 * l1_loss
         else:
             reprojection_loss = l1_loss
         
@@ -245,19 +265,45 @@ class StereoCriterion(nn.Module):
         """Computes the smoothness loss for a disparity image
         The color image is used for edge-aware smoothness
         """
-        grad_depth_x = torch.abs(depth[:, :, :, :-1] - depth[:, :, :, 1:])
-        grad_depth_y = torch.abs(depth[:, :, :-1, :] - depth[:, :, 1:, :])
+        grad_depth_x = torch.abs(depth[:, :, :, :-1] - depth[:, :, :, 1:]) #[352, 1215]
+        grad_depth_y = torch.abs(depth[:, :, :-1, :] - depth[:, :, 1:, :]) #[351, 1216]
 
-        grad_img_x = torch.mean(torch.abs(img[:, :, :, :-1] - img[:, :, :, 1:]), 1, keepdim=True)
-        grad_img_y = torch.mean(torch.abs(img[:, :, :-1, :] - img[:, :, 1:, :]), 1, keepdim=True)
+        grad_img_x = torch.mean(torch.abs(img[:, :, :, :-1] - img[:, :, :, 1:]), 1, keepdim=True) #[352, 1215]
+        grad_img_y = torch.mean(torch.abs(img[:, :, :-1, :] - img[:, :, 1:, :]), 1, keepdim=True) #[351, 1216]
 
         grad_depth_x *= torch.exp(-grad_img_x)
         grad_depth_y *= torch.exp(-grad_img_y)
 
         return grad_depth_x.mean() + grad_depth_y.mean()
         
-
     def loss_guided(self, inputs, outputs):
+        loss = 0.
+
+        pre_pred = inputs[("pre_pred")]
+        crop_mask = torch.zeros_like(pre_pred, device=self.device)
+        crop_mask[:,:,130:351,31:1184] = 1
+        
+        for scale in self.img_scales:
+            if self.source_scale:
+                depth_scale = outputs[("depth", 0, scale)]
+            else:
+                if scale > 0:
+                    raise NotImplementedError
+                depth_scale = outputs[("depth", scale)].unsqueeze(1)
+
+            mean_depth = depth_scale.mean((2,3), keepdim=True)
+            norm_depth = crop_mask * depth_scale / (mean_depth + 1e-8)
+
+            mean_pred = pre_pred.mean((2,3), keepdim=True)
+            pre_pred = crop_mask * pre_pred / (mean_pred + 1e-8)
+
+            smooth_loss = self.compute_smooth_loss(norm_depth, pre_pred)
+
+            loss += self.guided_weight * smooth_loss / (2 ** scale)
+
+        return {"guided_loss" : loss}
+
+    def loss_supervised(self, inputs, outputs):
     
         """Compute guided depth loss at source scale
         """
@@ -298,7 +344,7 @@ class StereoCriterion(nn.Module):
             
             losses += loss/(2 ** scale)
             
-        return {"guided_loss" : losses}   
+        return {"supervised_loss" : losses}   
         
         
     def orthogonal_regularization(self, inputs, outputs, model=None):
@@ -333,7 +379,7 @@ class StereoCriterion(nn.Module):
     def compute_depth_errors(self, pred, gt):
         """Computation of error metrics between predicted and ground truth depths
         """
-
+        pred = torch.clamp(pred, max=self.max_depth)
         mask = (gt > 0) & (gt <= self.max_depth)
         crop_mask = torch.zeros_like(mask, device=self.device)
 
@@ -399,7 +445,7 @@ def build(args):
     if args.rectilinear_epipolar_geometry:
         for name, values in model.sa_dcr.DCR.named_parameters():
             if "pos_emb" in name:
-                values.data = torch.tensor([0.,0.,0.,0.,0.,1.]).unsqueeze(-1).expand(22*76, -1, -1)
+                values.data = torch.tensor([0.,0.,0.,0.,0.,1.]).unsqueeze(-1).expand(num_patches, -1, -1)
                 values.requires_grad_(False) #.to(device)
 
     if args.dataset == "kitti":
@@ -407,16 +453,32 @@ def build(args):
         args.min_depth = 1e-3
         
         if args.edge_smoothness:
-            args.smoothness_weight = 1e-3
-        
-        # Hyperparameter change due to different parameter initialization method used
+            args.smoothness_weight = 0.1
+            
         if args.dcr_mode in ["sp", "spectrum"]:
-            weight_dict = {"reprojection_loss": 1.0, "fp_loss" : 1e-3,
-                           "orthog_reg": 1., "hoyer_reg": 1e-3}
-            losses = ["reprojection_loss", "fp_loss", "orthog_reg", "hoyer_reg"]
+            weight_dict = {
+                "reprojection_loss": 1.5,
+                "orthog_reg": 0.1, 
+                "hoyer_reg": 1e-3,
+                "fp_loss" : 5e-5, 
+                           }
+            losses = [
+                "reprojection_loss", 
+                "orthog_reg", 
+                "hoyer_reg", 
+                "fp_loss",  
+                    ]
         else:
-            weight_dict = {"reprojection_loss": 1.0, "fp_loss" : 1e-3}
-            losses = ["reprojection_loss", "fp_loss"]
+            weight_dict = {"reprojection_loss": 1.0, "guided_loss":1.0}
+            losses = ["reprojection_loss", "guided_loss"]
+
+        if args.pre_pred > 0:
+            weight_dict['guided_loss'] = args.pre_pred ###
+            losses.append("guided_loss")
+
+        if args.supervision > 0:
+            weight_dict['supervised_loss'] = args.supervision ###
+            losses.append("supervised_loss")
     else:
         raise NotImplementedError(f"{args.dataset} is not implemented.")
     

@@ -1,6 +1,6 @@
 import torch
 import random
-from PIL import Image
+from PIL import Image 
 import numpy as np
 import torch.utils.data as data
 from torchvision import transforms
@@ -30,6 +30,7 @@ class KittiBase(data.Dataset):
                  start_scale = None,
                  crop = False,
                  is_train=False,
+                 load_pred = True, ###
                  img_ext='.jpg'):
         super(KittiBase, self).__init__()
 
@@ -52,8 +53,9 @@ class KittiBase(data.Dataset):
         self.loader = pil_loader
         self.to_tensor = transforms.ToTensor()
 
-        self.master_side = "l"
-        self.switch_map = {"r": "l", "l": "r"}
+        self.load_pred = load_pred ###
+        self.master_side = "l" ###
+        self.switch_map = {"r": "l", "l": "r"} ###
 
         try:
             self.jitter_params = {'brightness': (.8, 1.2), 'contrast': (.8, 1.2), 'saturation': (.8, 1.2),
@@ -99,8 +101,10 @@ class KittiBase(data.Dataset):
 
         do_color_aug = self.is_train and random.random() > 0.5
             
-        
-        do_flip = self.is_train and random.random() > 0.5
+        if not self.load_pred: ###
+            do_flip = self.is_train and random.random() > 0.5
+        else: ###
+            do_flip = False ###
 
         line = self.filenames[index].split()
 
@@ -111,7 +115,7 @@ class KittiBase(data.Dataset):
 
         for i in self.frame_idxs:
             other_side = self.switch_map[side]
-            if i == 's':
+            if i == 's': 
                 if do_flip:
                     inputs[( "color", side, self.start_scale - 1)] = self.get_color(folder, frame_index, other_side, do_flip)
                 else:
@@ -123,27 +127,26 @@ class KittiBase(data.Dataset):
                     inputs[("color", side, self.start_scale - 1)] = self.get_color(folder, frame_index + i, side, do_flip)
 
 
-        # for i in self.frame_idxs:
-        #     if i == 's':
-        #         other_side = {"r": "l", "l": "r"}[side]
-        #         inputs[( "color", other_side, self.start_scale - 1)] = \
-        #                         self.get_color(folder, frame_index, other_side, do_flip)
-        #     else:
-        #         inputs[("color", side, self.start_scale - 1)] = \
-        #                         self.get_color(folder, frame_index + i, side, do_flip)
-
         # adjusting intrinsics to match each scale in the pyramid
-        if self.K is not None:
-            for scale in range(self.start_scale, self.start_scale + self.num_scales):
-                K = self.K.copy()
+        sup_folder = folder.split('/', 1)[0]
+        calib_info = self.load_calib_info(sup_folder)
+        #img_size = calib_info['S_rect_02']
+        if self.K is None:
+            K = calib_info['P_rect_02'].copy()
+        else:
+            K = self.K.copy()
+        
+        if do_flip:
+                K[0,2] = 1 - K[0,2]
 
-                K[0, :] *= self.width // (2 ** scale)
-                K[1, :] *= self.height // (2 ** scale)
+        for scale in range(self.start_scale, self.start_scale + self.num_scales):
+            K[0, :] *= self.width // (2 ** scale)
+            K[1, :] *= self.height // (2 ** scale)
 
-                inv_K = np.linalg.pinv(K)
+            inv_K = np.linalg.pinv(K)
 
-                inputs[("K", scale)] = torch.from_numpy(K)
-                inputs[("inv_K", scale)] = torch.from_numpy(inv_K)
+            inputs[("K", scale)] = torch.from_numpy(K)
+            inputs[("inv_K", scale)] = torch.from_numpy(inv_K)
 
         if do_color_aug:
             color_aug = transforms.ColorJitter(**self.jitter_params)
@@ -165,9 +168,14 @@ class KittiBase(data.Dataset):
             inputs["depth_gt"] = np.expand_dims(depth_gt, 0)
             inputs["depth_gt"] = torch.from_numpy(inputs["depth_gt"].astype(np.float32))
 
+        if self.load_pred > 0:
+            pre_pred = self.get_pred(folder, frame_index, do_flip) #[352, 1216]
+            pre_pred = torch.from_numpy(pre_pred[None, ...])
+            inputs["pre_pred"] = pre_pred
+
         if "s" in self.frame_idxs:
             stereo_T = np.eye(4, dtype=np.float32)
-            stereo_T[0, 3] = - 0.54
+            stereo_T[0, 3] = - (self.T or -0.54)
             inputs["stereo_T"] = torch.from_numpy(stereo_T)
 
         return inputs
@@ -199,6 +207,11 @@ class KittiBase(data.Dataset):
     def get_depth(self, folder, frame_index, side, do_flip):
         raise NotImplementedError
 
+    def get_pred(self, folder, frame_index, do_flip):
+        raise NotImplementedError
+    
+    def load_calib_info(self, sup_folder, calib_file='calib_cam_to_cam.txt'):
+        raise NotImplementedError
         
         
 def pil_loader(path):

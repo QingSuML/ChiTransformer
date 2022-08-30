@@ -3,7 +3,7 @@ import numpy as np
 import skimage.transform
 import PIL.Image as pil
 from .kittibase import *
-from utils.kitti_utils import generate_depth_map
+from utils.kitti_utils import generate_depth_map, read_calib_file
 
 class KittiDataset(KittiBase):
     """Superclass for different types of KITTI dataset loaders
@@ -16,14 +16,40 @@ class KittiDataset(KittiBase):
         # by 1 / image_height. A principal point is assumed to be exactly centered.
         # Disable the horizontal flip augmentation if your principal point is far 
         # from the center.
-        
         self.K = np.array([[0.58, 0, 0.5, 0],
                            [0, 1.92, 0.5, 0],
                            [0, 0, 1, 0],
                            [0, 0, 0, 1]], dtype=np.float32)
-
+        self.T = 0.5347 #0.54
+        
         self.full_res_shape = (1242, 375)
         self.side_map = {"2": 2, "3": 3, "l": 2, "r": 3}
+
+    def load_calib_info(self, sup_folder, calib_file='calib_cam_to_cam.txt'):
+        P_rect_02 = np.eye(4)
+        P_rect_03 = np.eye(4)
+        calib_info = read_calib_file(os.path.join(self.data_path, sup_folder, calib_file))
+
+        P_rect_02[:-1,:-1] = calib_info['P_rect_02'].reshape(3,4)[:,:-1]
+        S_rect_02 = calib_info['S_rect_02']
+        P_rect_02[0, :] /= S_rect_02[0]
+        P_rect_02[1, :] /= S_rect_02[1]
+
+        P_rect_03[:-1,:-1] = calib_info['P_rect_03'].reshape(3,4)[:,:-1]
+        S_rect_03 = calib_info['S_rect_03']
+        P_rect_03[0, :] /= S_rect_03[0]
+        P_rect_03[1, :] /= S_rect_03[1]
+
+        T_rect_23 = P_rect_02[0,-1]/P_rect_02[0,0] - P_rect_03[0,-1]/P_rect_03[0,0]
+
+        P_rect_02[:2, 2] = 0.5
+        P_rect_03[:2, 2] = 0.5
+
+        return {'P_rect_02' : P_rect_02.astype(np.float32),
+                                'P_rect_03' : P_rect_03.astype(np.float32),
+                                'S_rect_02' : S_rect_02[::-1].astype(np.int32),
+                                'S_rect_03' : S_rect_03[::-1].astype(np.int32),
+                                'T_rect_23' : T_rect_23}
 
     def check_depth(self):
         line = self.filenames[0].split()
@@ -91,4 +117,11 @@ class KittiDataset(KittiBase):
             depth_gt = np.fliplr(depth_gt)
 
         return depth_gt     
+        
+    def get_pred(self, folder, frame_index, do_flip):
+        pred_h, pred_w = 352, 1216
+        assert do_flip==False, "Guided training is not implemented for flip augmentation for now."
+        pred_filename = os.path.join(self.data_path, "pred", folder, f"{frame_index:010d}.bin")
+        pre_pred = np.fromfile(pred_filename, dtype=np.float32).reshape(pred_h, pred_w)
+        return pre_pred
         
