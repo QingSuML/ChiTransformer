@@ -1,7 +1,7 @@
 ## ChiTransformer: Towards Reliable Stereo from Cues [CVPR 2022]
-- ### The VERY FIRST depth-cue-based binocular depth estimator
-- ### The binocular depth esitmator exempted from ill-poisedness
-- ### A fail-safe design that enables easy conversion between monocular and binocular estimation.
+- #### The FIRST depth-cue-based binocular depth estimator.
+- #### The binocular depth esitmator exempted from the long-standing ill-poisedness
+- #### A fail-safe design that enables easy conversion between monocular and binocular estimation.
 
 ### Paper:
 - [[cvpr2022 camera ready](https://openaccess.thecvf.com/content/CVPR2022/html/Su_Chitransformer_Towards_Reliable_Stereo_From_Cues_CVPR_2022_paper.html)]
@@ -70,8 +70,14 @@ In the video above, Chitransformer is compared with the state-of-the-art monocul
  ```shell
    torchrun --nproc_per_node=8 main.py --load_weight MODEL_PATH --data_path DATA_PATH --png --stereo --edge_smoothness --split SPLIT_TYPE --img_scales 0 --dcr_mode sp --rectilinear_epipolar_geometry [--freeze_embedder] [--only_dcr] [--train_refinenet] --epochs EPOCHS --lr_drop LR_DROP_POINT --learning_rate 0.00001 [--invert] [--crop]
    ```
-Optional args should be set accordingly to achieve better performance. The current training pipeline is for (352, 1216) input. For input image of other sizes, you need to reconfigure accordingly. For more training options, please refer to $configs.py$.
- 
+Optional args should be set accordingly to achieve better performance. The current training pipeline is for (352, 1216) input. For input image of other sizes, you need to reconfigure accordingly. For more training options, please refer to $configs.py$.   
+
+Training tips:
+- Weights of loss components can be adjusted in the file *builder.py*:
+
+- To facilitate a stable training process, a fixed intrinsic matrix of the reprojection-based
+self-supervised training pipeline is desired. Make sure that the principle point is exactly centered due to the grid_sampler method used for image sampling.
+- T
 
 ### More qualitative comparisons with DPT
 

@@ -20,7 +20,7 @@ class KittiDataset(KittiBase):
                            [0, 1.92, 0.5, 0],
                            [0, 0, 1, 0],
                            [0, 0, 0, 1]], dtype=np.float32)
-        self.T = 0.5347 #0.54
+        self.T = 0.54
         
         self.full_res_shape = (1242, 375)
         self.side_map = {"2": 2, "3": 3, "l": 2, "r": 3}
