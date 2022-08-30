@@ -73,11 +73,35 @@ In the video above, Chitransformer is compared with the state-of-the-art monocul
 Optional args should be set accordingly to achieve better performance. The current training pipeline is for (352, 1216) input. For input image of other sizes, you need to reconfigure accordingly. For more training options, please refer to $configs.py$.   
 
 Training tips:
-- Weights of loss components can be adjusted in the file *builder.py*:
+- Weights of loss components can be adjusted in the file `builder.py` in `build` function:
+```
+if args.dataset == "kitti":
+        args.max_depth = 80.0
+        args.min_depth = 1e-3
+        
+        if args.edge_smoothness:
+            args.smoothness_weight = 0.1
+            
+        if args.dcr_mode in ["sp", "spectrum"]:
+            weight_dict = {
+                "reprojection_loss": 1.5,
+                "orthog_reg": 0.1, 
+                "hoyer_reg": 1e-3,
+                "fp_loss" : 5e-5, 
+                           }
+            losses = [
+                "reprojection_loss", 
+                "orthog_reg", 
+                "hoyer_reg", 
+                "fp_loss",  
+                    ]
+``` 
 
 - To facilitate a stable training process, a fixed intrinsic matrix of the reprojection-based
 self-supervised training pipeline is desired. Make sure that the principle point is exactly centered due to the grid_sampler method used for image sampling.
-- T
+- Direct fine-tuning on data with sparse ground truth will results in degraded details and depth-object and semantic consistency. To preserve the level of "descriptiveness" of the original model, it is recommended to run an inference and save the pre-prediction over the entire dataset prior the training. During training, the pre-prediction gradient can be leveraged through edge-aware smoothness loss to preserve the depth-object consistency.
+    - Store the pre-prediction in the folder `/pred` under `data_path` folder.
+    - You can specify `--pre_pred WEIGHT` to enable pre-pred guided training
 
 ### More qualitative comparisons with DPT
 
