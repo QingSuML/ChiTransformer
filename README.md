@@ -16,7 +16,7 @@ ChiTransformer is the first cue-based binocular depth estimator that leverages t
 
 https://user-images.githubusercontent.com/42019759/187740535-17e2d477-b751-49fc-b356-51d6acfb4432.mp4
 
-In the video above, Chitransformer is compared with the state-of-the-art monocular depth estimator, DPT-hybrid to show the improvement in reliability, i.f.o content-depth consistency and relative-position-depth consistency. Visually significant improvements can be found where,   
+In the video above, Chitransformer is compared with the state-of-the-art monocular depth estimator, DPT-hybrid, to show the improvement in reliability, i.f.o object-depth consistency and relative-position-depth consistency. Visually significant improvements can be found where,   
 - Tall cylindrical-like objects, e.g., Utiliy pole, light/sign poles, tall tree tunks,etc. The depth of this type of objects have near-uniform values from bottom to top. However, DPT always predicts the upper part of the object much closer, which, in the depth map, is much brigher. 
 - The sky-line regions and the objects underneath. Though trained with dense gt and then fine-tuned on KITTI, DPT usually predicts the sky much closer to the foreground and predicts the objects underneath much further.
 - Protruding, hanging-over objects, e.g., signboard, trailing plants, power-lines, etc. DPT tends to predict those objects closer.
