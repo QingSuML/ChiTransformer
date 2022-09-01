@@ -7,14 +7,16 @@
 - [[cvpr2022 camera ready](https://openaccess.thecvf.com/content/CVPR2022/html/Su_Chitransformer_Towards_Reliable_Stereo_From_Cues_CVPR_2022_paper.html)]
 - The latest version can be found at [arXiv](https://arxiv.org/abs/2203.04554)
 
-[//]: # '<img width="1013" alt="image" src="https://user-images.githubusercontent.com/42019759/179230291-b3473a9c-763d-4776-9311-2f3de0d8d267.png">'
+https://user-images.githubusercontent.com/42019759/187740463-c49d9625-453b-4e9e-88d2-f06342765f1b.mp4
+
+Monocular estimators are free from most of the ill-posedness faced by matching-based multi-view depth estimator. However, ,monocular depth estimators can not provide reliable depth prediction due to the lack of epipolar constraint. 
+
+ChiTransformer is the first cue-based binocular depth estimator that leverages the strengths of both methods by introducing the Depth-Cue-Rectification (DCR) module to rectify the depth cues of two views in a cross-attention fashion under the underlying epipolar constraints that can be learned in DCR module. 
 
 
+https://user-images.githubusercontent.com/42019759/187740535-17e2d477-b751-49fc-b356-51d6acfb4432.mp4
 
-https://user-images.githubusercontent.com/42019759/186087073-dcbd096c-e850-4c64-800b-88dc2d59ec7f.mp4   
-
-Monocular estimators are free from most of the ill-posedness faced with matching-based multi-view depth estimator, however, ,monocular depth estimators can not provide reliable depth prediction due to the lack of epipolar constraint. ChiTransformer is the first cue-based binocular depth estimator that leverages the strengths of both methods by introducing the Depth-Cue-Rectification (DCR) module to rectify the depth cues of two views in a cross-attention fashion under the underlying epipolar constraints that can be learned in DCR module. 
-In the video above, Chitransformer is compared with the state-of-the-art monocular depth estimator, DPT-hybrid to show the improvement in reliability, i.f.o content-depth consistency and relative-position-depth consistency. Visually significant improvements can be found where,   
+In the video above, Chitransformer is compared with the state-of-the-art monocular depth estimator, DPT-hybrid, to show the improvement in reliability, i.f.o object-depth consistency and relative-position-depth consistency. Visually significant improvements can be found where,   
 - Tall cylindrical-like objects, e.g., Utiliy pole, light/sign poles, tall tree tunks,etc. The depth of this type of objects have near-uniform values from bottom to top. However, DPT always predicts the upper part of the object much closer, which, in the depth map, is much brigher. 
 - The sky-line regions and the objects underneath. Though trained with dense gt and then fine-tuned on KITTI, DPT usually predicts the sky much closer to the foreground and predicts the objects underneath much further.
 - Protruding, hanging-over objects, e.g., signboard, trailing plants, power-lines, etc. DPT tends to predict those objects closer.
@@ -105,12 +107,27 @@ self-supervised training pipeline is desired. Make sure that the principle point
 
 ### More qualitative comparisons with DPT
 
-![26_93_364_compare_1](https://user-images.githubusercontent.com/42019759/186490687-28468fac-4fbd-4a66-a421-cb3bcc17b5cf.png)
-![26_93_364_compare_2](https://user-images.githubusercontent.com/42019759/186490733-446cd8e5-7f92-44ae-8009-59c26291ac8a.png)
-Checkout the prediction on the whole sequence of KITTI_09_26_93 at: [https://youtu.be/WULXAFbuRqw]
+https://user-images.githubusercontent.com/42019759/187740352-7623a76b-3882-44db-8868-a6838c09d76e.mp4
 
-![1003_34_48_compare](https://user-images.githubusercontent.com/42019759/186490776-09e8e8c8-e130-4088-9280-aee5236fc763.png)
-Checkout the prediction on the whole sequence of KITTI_10_03_34 at:[https://youtu.be/evif-Z8odYQ]
+
+<p align="left">
+    <img src="https://user-images.githubusercontent.com/42019759/186490687-28468fac-4fbd-4a66-a421-cb3bcc17b5cf.png" width="740">
+</p>
+
+<p align="left">
+    <img src="https://user-images.githubusercontent.com/42019759/186490733-446cd8e5-7f92-44ae-8009-59c26291ac8a.png" width="740">
+</p>
+<p align="left">
+    Checkout the prediction on the whole sequence of KITTI_09_26_93 at: [https://youtu.be/WULXAFbuRqw]
+</p>
+
+<p align="left">
+    <img src="https://user-images.githubusercontent.com/42019759/186490776-09e8e8c8-e130-4088-9280-aee5236fc763.png" width="740">
+</p>
+<p align="left">
+    Checkout the prediction on the whole sequence of KITTI_10_03_34 at:[https://youtu.be/evif-Z8odYQ]
+</p>
+
 
 [**More videos**]
 - Checkout the prediction on the whole sequence of KITTI_10_03_34 at: [https://youtu.be/evif-Z8odYQ]
