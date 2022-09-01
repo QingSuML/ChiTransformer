@@ -18,7 +18,7 @@ from engine import train_one_epoch, evaluate
 
 import wandb
 
-def main(args):    
+def main(args):
     
     # scales: e.g. [0] or [0,1,2,3]
     args.num_scales = len(args.img_scales)
@@ -29,7 +29,7 @@ def main(args):
     output_dir = Path(args.output_dir)
     
     #default: "cuda"
-    device = torch.device(args.device) 
+    device = torch.device(args.device)
 
     #fixed seed for reproducibility
     seed = args.seed + utils.get_rank()
@@ -57,9 +57,9 @@ def main(args):
     criterion.to(device)
     
     if args.distributed:
-        chitransformer = torch.nn.parallel.DistributedDataParallel(chitransformer, 
-                                                          device_ids=[args.gpu], 
-                                                          find_unused_parameters=True)   
+        chitransformer = torch.nn.parallel.DistributedDataParallel(chitransformer,
+                                                          device_ids=[args.gpu],
+                                                          find_unused_parameters=True)
         model_without_ddp = chitransformer.module
     
                 
@@ -68,6 +68,8 @@ def main(args):
     n_trainable_params = 0
     
     models['embedder'] = model_without_ddp.patch_embedder
+    models["dcr"] = model_without_ddp.sa_dcr
+    models['refinenet'] = model_without_ddp.refinenet
     
     if args.freeze_embedder:
         for params in models['embedder'].parameters():
@@ -84,7 +86,6 @@ def main(args):
         n_trainable_params += sum(p.numel() for p in parameters_to_train[-1]["params"])
     
     
-    models["dcr"] = model_without_ddp.sa_dcr
     if not args.freeze_dcr_ca:
         parameters_to_train.append(
                     {
@@ -104,7 +105,7 @@ def main(args):
         parameters_to_train.append(
                 {
                     "params":[params for name, params in models['dcr'].named_parameters() \
-                             if "DCR" not in name and params.requires_grad],
+                             if "DCR" not in name and params.requires_grad and "pos_embed" not in name],
                     "lr": args.learning_rate_pretrained
                 }
         )
@@ -113,9 +114,8 @@ def main(args):
         for params in models['dcr'].Blocks.parameters():
             params.requires_grad_(False)
     
-    
-    models['refinenet'] = model_without_ddp.refinenet
-    if not args.only_dcr:
+
+    if not args.only_dcr and not args.freeze_dcr_ca:
         parameters_to_train.append(
                     {
                         "params":[params for _, params in models['refinenet'].head.named_parameters()\
@@ -138,8 +138,9 @@ def main(args):
         )
         n_trainable_params += sum(p.numel() for p in parameters_to_train[-1]["params"])
     else:
-        for params in models['refinenet'].parameters():
-            params.requires_grad_(False)
+        for name, params in models['refinenet'].named_parameters():
+            if "head" not in name:
+                params.requires_grad_(False)
                         
     n_params = sum(p.numel() for p in model_without_ddp.parameters())
     print(f'number of total parameters: {n_params}\n')
@@ -159,7 +160,7 @@ def main(args):
                           weight_decay=args.weight_decay)
     """learning rate"""
     lr_scheduler = torch.optim.lr_scheduler.StepLR(
-        optimizer, args.lr_drop, gamma=0.1)    
+        optimizer, args.lr_drop, gamma=0.1)
     
 
     dataset_dict = {"kitti": KittiDataset,
@@ -180,7 +181,7 @@ def main(args):
     args.num_total_steps = (num_train_samples // (args.batch_size*args.world_size)) * args.epochs
 
     dataset_train = dataset(args.data_path, train_filenames, args.height, args.width,
-                            args.frame_ids, args.num_scales, crop=args.crop, start_scale=0, 
+                            args.frame_ids, args.num_scales, crop=args.crop, start_scale=0,
                             is_train=True, load_pred=args.pre_pred, img_ext=img_ext)
     dataset_val = dataset(args.data_path, val_filenames, args.height, args.width,
                           args.frame_ids, args.num_scales, crop=args.crop, start_scale=0,
@@ -235,9 +236,9 @@ def main(args):
     for epoch in range(args.start_epoch, args.epochs):
         
         if args.distributed:
-            #In distributed mode, calling the set_epoch() method at the beginning of each epoch 
-            #before creating the DataLoader iterator is necessary to make shuffling work properly 
-            #across multiple epochs. 
+            #In distributed mode, calling the set_epoch() method at the beginning of each epoch
+            #before creating the DataLoader iterator is necessary to make shuffling work properly
+            #across multiple epochs.
             sampler_train.set_epoch(epoch)
             
         train_stats = train_one_epoch(
@@ -256,6 +257,7 @@ def main(args):
                     'lr_scheduler': lr_scheduler.state_dict(),
                     'epoch': epoch,
                     'args': args,
+                    'training_configs': {**criterion.weight_dict, 'smoothness':args.smoothness_weight}
                 }, checkpoint_path)
 
         test_stats = evaluate(models, criterion, data_loader_val, args.log_freq, device)

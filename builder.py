@@ -16,7 +16,7 @@ class StereoCriterion(nn.Module):
     
     """ This class computes the combination of loss for chitransformer.
     The process happens in x steps:
-        1) compute the (multi-scale) reprojection loss w. or w\.  
+        1) compute the (multi-scale) reprojection loss w. or w\.
                         edge-aware depth smoothness abd automasking
         2) compute the regularization for learning orthogonal matrices
         3) compute the regularization for learning polarized diagonals
@@ -28,7 +28,7 @@ class StereoCriterion(nn.Module):
         """ Create the criterion.
         Parameters:
             weight_dict: dict containing as key the names of the losses and as values their relative weight.
-            e.g. {"loss" : {"reprojection_loss": 1.0, "fp_loss": 0.3}, 
+            e.g. {"loss" : {"reprojection_loss": 1.0, "fp_loss": 0.3},
                     "reg" : {"orthog_reg": 1e-7, "hoyer_reg": 1e-4}}
             losses: list of all the losses to be applied. See get_loss for list of available losses.
             e.g. ["reprojection_loss", "fp_loss", "orthog_reg", "hoyer_reg"]
@@ -147,7 +147,7 @@ class StereoCriterion(nn.Module):
                 mask = torch.zeros_like(to_optimise, device=self.device)
                 mask[to_optimise < left_right_loss] = 1.0
                 
-                to_optimise = to_optimise * mask * (to_optimise.numel() / mask.sum()) 
+                to_optimise = to_optimise * mask * (to_optimise.numel() / mask.sum())
                 
             losses += to_optimise.mean() / (2 ** scale)
             
@@ -164,7 +164,7 @@ class StereoCriterion(nn.Module):
 
     def loss_far_point(self, inputs, outputs):
     
-        mask = self.fp_weighted_mask(inputs[("color", 'l', 0)], 
+        mask = self.fp_weighted_mask(inputs[("color", 'l', 0)],
                                 inputs[("color", 'r', 0)]) #[B, h, w]
         pred = outputs[("depth", 0)] #[B, h, w]
                 
@@ -197,7 +197,7 @@ class StereoCriterion(nn.Module):
                 cam_points = self.backproject_depth[0](depth, inputs[("inv_K", 0)])
                 outputs[("sample", 'r', scale)] = self.project_3d[0](cam_points, inputs[("K", 0)], T)
                 outputs[("color", 'r', scale)] = F.grid_sample(inputs[("color", 'r', 0)],
-                                                               outputs[("sample", 'r', scale)], 
+                                                               outputs[("sample", 'r', scale)],
                                                                align_corners=True,
                                                                padding_mode="border")
                 if not self.disable_automasking:
@@ -207,7 +207,7 @@ class StereoCriterion(nn.Module):
                 cam_points = self.backproject_depth[scale](depth, inputs[("inv_K", scale)])
                 outputs[("sample", 'r', scale)] = self.project_3d[scale](cam_points, inputs[("K", scale)], T)
                 outputs[("color", 'r', scale)] = F.grid_sample(inputs[("color", 'r', scale)],
-                                                               outputs[("sample", 'r', scale)], 
+                                                               outputs[("sample", 'r', scale)],
                                                                align_corners=True,
                                                                padding_mode="border")
 
@@ -318,10 +318,10 @@ class StereoCriterion(nn.Module):
                 depth_pred = outputs[("depth", scale)].unsqueeze(1) #[B, 1, h, w]
 
             #min_depth=1e-3, max_depth=80.0
-            depth_pred = torch.clamp(F.interpolate(depth_pred, 
-                                                   [self.height, self.width], 
-                                                   mode="bilinear", align_corners=False), 
-                                     self.min_depth,) 
+            depth_pred = torch.clamp(F.interpolate(depth_pred,
+                                                   [self.height, self.width],
+                                                   mode="bilinear", align_corners=False),
+                                     self.min_depth,)
 
             mask = (depth_gt > 0) & (depth_gt <= self.max_depth)
             crop_mask = torch.zeros_like(mask, device=self.device)
@@ -344,7 +344,7 @@ class StereoCriterion(nn.Module):
             
             losses += loss/(2 ** scale)
             
-        return {"supervised_loss" : losses}   
+        return {"supervised_loss" : losses}
         
         
     def orthogonal_regularization(self, inputs, outputs, model=None):
@@ -369,7 +369,7 @@ class StereoCriterion(nn.Module):
             s1 = module.crs_layer.spectrum.S1
             s2 = module.crs_layer.spectrum.S2
             s_prod = s1 * s2
-            reg = F.smooth_l1_loss(s_prod.abs(), self.ones_vector.unsqueeze(-1), reduction='sum') 
+            reg = F.smooth_l1_loss(s_prod.abs(), self.ones_vector.unsqueeze(-1), reduction='sum')
             hoyer_reg += reg / (s1.norm(2) * s2.norm(2))
             
         hoyer_reg /= self.num_dcr
@@ -409,7 +409,7 @@ class StereoCriterion(nn.Module):
 
         sq_rel = torch.mean((gt - pred) ** 2 / gt)
 
-        return {"abs_rel" : abs_rel, "sq_rel" : sq_rel, "rmse" : rmse, 
+        return {"abs_rel" : abs_rel, "sq_rel" : sq_rel, "rmse" : rmse,
                 "rmse_log" : rmse_log, "a1" : a1, "a2" : a2, "a3" : a3}
 
 
@@ -418,19 +418,19 @@ def build(args):
     device = torch.device(args.device)
     
     if args.dcr_mode in ['sp', 'spectral']:
-        dcr_mode = partial(DepthCueRectification_Sp, layer_norm=False)  
+        dcr_mode = partial(DepthCueRectification_Sp, layer_norm=False)
     if args.dcr_mode in ['G', 'direct']:
         dcr_mode = partial(DepthCueRectification_G, layer_norm=False)
     
-    model_args = {"in_chans" : args.inchans, 
-                  "embed_layer" : args.embed_layer, 
+    model_args = {"in_chans" : args.inchans,
+                  "embed_layer" : args.embed_layer,
                   "embed_dim" : args.embed_dim,
-                  "depth" : args.depth, 
-                  "sa_depth" : args.sa_depth, 
+                  "depth" : args.depth,
+                  "sa_depth" : args.sa_depth,
                   "dcr_module" : dcr_mode,
-                  "invert" : args.invert, 
-                  "scale" : args.scale, 
-                  "shift" : args.shift, 
+                  "invert" : args.invert,
+                  "scale" : args.scale,
+                  "shift" : args.shift,
                   "size" : (args.height, args.width),
                   "device" : device,}
     
@@ -453,24 +453,24 @@ def build(args):
         args.min_depth = 1e-3
         
         if args.edge_smoothness:
-            args.smoothness_weight = 0.1
+            args.smoothness_weight = 1.0
             
         if args.dcr_mode in ["sp", "spectrum"]:
             weight_dict = {
                 "reprojection_loss": 1.5,
-                "orthog_reg": 0.1, 
+                "orthog_reg": 0.1,
                 "hoyer_reg": 1e-3,
-                "fp_loss" : 5e-5, 
+                "fp_loss" : 5e-5,
                            }
             losses = [
-                "reprojection_loss", 
-                "orthog_reg", 
-                "hoyer_reg", 
-                "fp_loss",  
+                "reprojection_loss",
+                "orthog_reg",
+                "hoyer_reg",
+                "fp_loss",
                     ]
         else:
-            weight_dict = {"reprojection_loss": 1.0, "guided_loss":1.0}
-            losses = ["reprojection_loss", "guided_loss"]
+            weight_dict = {"reprojection_loss": 1.0, "fp_loss" : 1e-3, "guided_loss":1.0}
+            losses = ["reprojection_loss", "fp_loss", "guided_loss"]
 
         if args.pre_pred > 0:
             weight_dict['guided_loss'] = args.pre_pred ###
