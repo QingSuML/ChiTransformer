@@ -128,7 +128,7 @@ def run(input_path, output_path, model_path=None, optimize=True):
                     output_path,
             os.path.splitext(os.path.basename(f'result_color_' + name.split('.')[0] + '.png'))[0]
                 )
-        write_depth_color(filename, 1/np.sqrt(prediction+1e-8), absolute_depth=False)
+        write_depth_color(filename, 1/prediction+1e-8, absolute_depth=False)
 
     print("finished")
 
