@@ -17,8 +17,7 @@ def run(input_path, output_path, model_path=None, optimize=True):
     net_w = 1216
     net_h = 352
 
-    #device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    device = torch.device("cpu")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("device: %s" % device)
     
     model = ChitransformerDepth( 
@@ -29,7 +28,10 @@ def run(input_path, output_path, model_path=None, optimize=True):
     
     if model_path:
         checkpoint = torch.load(model_path, map_location='cpu')
-        model.load_state_dict(checkpoint)
+        if isinstance(checkpoint, dict):
+            model.load_state_dict(checkpoint["model"])
+        else:
+            model.load_state_dict(checkpoint)
 
     normalization = NormalizeImage(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
 
