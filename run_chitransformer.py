@@ -28,9 +28,9 @@ def run(input_path, output_path, model_path=None, optimize=True):
     
     if model_path:
         checkpoint = torch.load(model_path, map_location='cpu')
-        if isinstance(checkpoint, dict):
-            model.load_state_dict(checkpoint["model"])
-        else:
+        try:
+            model.load_state_dict(checkpoint['model'])
+        except:
             model.load_state_dict(checkpoint)
 
     normalization = NormalizeImage(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
