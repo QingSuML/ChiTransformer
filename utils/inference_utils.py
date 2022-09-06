@@ -270,7 +270,7 @@ def write_depth_color(path, depth, absolute_depth=False):
     
     normalizer = mpl.colors.Normalize(vmin=out.min(), vmax=vmax)
     
-    mapper = cm.ScalarMappable(norm=normalizer, cmap='magma')
+    mapper = cm.ScalarMappable(norm=normalizer, cmap='gnuplot2') # other colormap: magma
     colormapped_im = (mapper.to_rgba(out)[:, :, :3] * 255).astype(np.uint8)
     
     print('colormapped_im_shape,', colormapped_im.shape)

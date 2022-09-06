@@ -9,7 +9,7 @@ from functools import partial
 from torchvision.transforms import Compose
 from model.chitransformer import ChitransformerDepth
 from model.dcr import DepthCueRectification_Sp
-from utils.inference_util import *
+from utils.inference_utils import *
 
 
 
@@ -17,7 +17,8 @@ def run(input_path, output_path, model_path=None, optimize=True):
     net_w = 1216
     net_h = 352
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    #device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cpu")
     print("device: %s" % device)
     
     model = ChitransformerDepth( 
@@ -110,6 +111,7 @@ def run(input_path, output_path, model_path=None, optimize=True):
                 img_3_input = img_3_input.half()
             
             prediction = model.forward(img_2_input, img_3_input)
+            prediction = prediction[("depth", 0)]
             prediction = (
                             torch.nn.functional.interpolate(
                                 prediction.unsqueeze(1),
@@ -126,7 +128,7 @@ def run(input_path, output_path, model_path=None, optimize=True):
                     output_path,
             os.path.splitext(os.path.basename(f'result_color_' + name.split('.')[0] + '.png'))[0]
                 )
-        write_depth_color(filename, prediction, absolute_depth=False)
+        write_depth_color(filename, 1/np.sqrt(prediction+1e-8), absolute_depth=False)
 
     print("finished")
 
