@@ -36,17 +36,18 @@ class CrossAttention_G(nn.Module):
     """
     """ 
     
-    def __init__(self, dim, num_patches):
+    def __init__(self, dim, num_patches, a_temp = False):
         
         super(CrossAttention_G, self).__init__()
 
         self.qk = nn.Linear(dim, dim, bias=False)
         
         self.gating = nn.Parameter(torch.tensor(1.))
-        self.temp = nn.Parameter(torch.tensor(0.1))
+        self.h_temp = nn.Parameter(torch.tensor(0.1))
+        self.p_temp = nn.Parameter(torch.tensor(1.))
         self.pos_emb = nn.Parameter(torch.zeros(num_patches, 6, 1))
-        self.scale = dim ** -0.5
-        
+        self.scale = nn.Parameter(torch.tensor(2 * dim ** -0.5)) if a_temp else dim ** -0.5
+
         self.reset_parameters()
         
     def reset_parameters(self):
@@ -69,7 +70,7 @@ class CrossAttention_G(nn.Module):
         patch_score = (x @ k.transpose(-2, -1)) * self.scale  # [B, N, N]
         patch_score = patch_score.softmax(dim=-1)
         
-        pos_score = coords.matmul(self.pos_emb).squeeze(-1).softmax(dim=-1).expand(B, -1, -1) 
+        pos_score = (-self.p_temp * coords.matmul(self.pos_emb)).squeeze(-1).softmax(dim=-1).expand(B, -1, -1) 
         
         attn = (1.-torch.sigmoid(self.gating)) * patch_score + \
                                     torch.sigmoid(self.gating) * pos_score  # [B, N, N]
@@ -79,7 +80,7 @@ class CrossAttention_G(nn.Module):
     def get_heat_map(self, attn):
 
         entropy = torch.sum(-attn * torch.log(attn + 1e-8), dim=-1, keepdim=True) 
-        hmap = 2*(1 - torch.sigmoid(self.temp * entropy))
+        hmap = 2*(1 - torch.sigmoid(self.h_temp * entropy))
 
         return hmap # [B, N, 1]
 
@@ -116,16 +117,17 @@ class CrossAttention_Sp(nn.Module):
     """
     """
     
-    def __init__(self, dim, num_patches, device=None):
+    def __init__(self, dim, num_patches, device=None, a_temp=False):
         
         super(CrossAttention_Sp, self).__init__()
         
         self.spectrum = SpectralDecomp(dim)
         
         self.gating = nn.Parameter(torch.tensor(1.))
-        self.temp = nn.Parameter(torch.tensor(0.1))
+        self.h_temp = nn.Parameter(torch.tensor(0.1))
+        self.p_temp = nn.Parameter(torch.tensor(1.))
         self.pos_emb = nn.Parameter(torch.zeros(num_patches, 6, 1))
-        self.scale = dim ** -0.5
+        self.scale = nn.Parameter(torch.tensor(2 * dim ** -0.5)) if a_temp else dim ** -0.5
         
         self.device = device or torch.device('cpu')
         self.reset_parameters()
@@ -155,7 +157,7 @@ class CrossAttention_Sp(nn.Module):
         patch_score = ((x @ y.unsqueeze(1).transpose(-2, -1)) * \
                        (self.scale)).softmax(dim=-1)  # [B, 2, N, N]
 
-        pos_score = coords.matmul(self.pos_emb).squeeze(-1).softmax(dim=-1).expand(B, 2, -1, -1)
+        pos_score = (-self.p_temp.abs() * coords.matmul(self.pos_emb)).squeeze(-1).softmax(dim=-1).expand(B, 2, -1, -1)
         
         attn = (1.-torch.sigmoid(self.gating)) * patch_score + \
                                     torch.sigmoid(self.gating) * pos_score  # [B, 2, N, N]
@@ -166,7 +168,7 @@ class CrossAttention_Sp(nn.Module):
         
         entropy = torch.sum(-attn * torch.log(attn + 1e-8), dim=-1).permute(0,2,1)
 
-        hmap = 2 - 2*torch.sigmoid(self.temp * entropy) #[B, N, 2]
+        hmap = 2 - 2*torch.sigmoid(self.h_temp * entropy) #[B, N, 2]
 
         fgbg = hmap[..., 0] >= hmap[..., 1]
         
