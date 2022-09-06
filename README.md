@@ -35,7 +35,7 @@ In the video above, Chitransformer is compared with the state-of-the-art monocul
 ### Setup 
 
 1) Download the model weights and place them in the `weights` folder:
-- [chitransofrmer_model_ssgm0_5_09252021.pth](https://drive.google.com/file/d/1LIHNdyO8Jbhe0RWbpUzdbSo4zU82Tg41/view?usp=sharing)   
+- [chitransofrmer_model_ssgm0_5_09252021.pth](https://drive.google.com/file/d/1KsKlJUgjdjamiFEFRTMxw_6REJmEZ-to/view?usp=sharing)   
 
 
 2) Set up dependencies: 
