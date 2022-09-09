@@ -1,4 +1,5 @@
 <img width="1120" alt="predictions" src="https://user-images.githubusercontent.com/42019759/189385051-382d18db-1a98-4ee7-8295-0c73782e8260.png">
+<img width="1120" alt="predictions2" src="https://user-images.githubusercontent.com/42019759/189411569-730f1980-3d63-4b4a-b446-1f6df209e4cc.png">
 
 ## ChiTransformer: Towards Reliable Stereo from Cues [CVPR 2022]
 - #### The FIRST depth-cue-based binocular depth estimator.
