@@ -1,4 +1,4 @@
-![chit_inference](https://user-images.githubusercontent.com/42019759/189180500-d5dd951e-fbce-4f24-88b5-1c859b1df15b.png)
+<img width="1120" alt="predictions" src="https://user-images.githubusercontent.com/42019759/189385051-382d18db-1a98-4ee7-8295-0c73782e8260.png">
 
 ## ChiTransformer: Towards Reliable Stereo from Cues [CVPR 2022]
 - #### The FIRST depth-cue-based binocular depth estimator.
