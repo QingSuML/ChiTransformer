@@ -172,9 +172,9 @@ class CrossAttention_Sp(nn.Module):
 
         fgbg = hmap[..., 0] >= hmap[..., 1]
         
-        route = torch.empty_like(hmap).to(self.device)
-        route[fgbg] = torch.tensor([1., 0.]).to(self.device)
-        route[~fgbg] = torch.tensor([0., 1.]).to(self.device)
+        route = torch.zeros_like(hmap)
+        route[...,0][fgbg] += 1.
+        route[...,1][~fgbg] += 1.
         
         return hmap, route.requires_grad_(False)  #[B, N, 2]
 

@@ -111,8 +111,12 @@ def run(input_path, output_path, model_path=None, optimize=True):
                 img_3_input = img_3_input.to(memory_format=torch.channels_last)
                 img_2_input = img_2_input.half()
                 img_3_input = img_3_input.half()
-            
-            prediction = model.forward(img_2_input, img_3_input)
+                
+                with torch.autocast(device_type="cuda", dtype=torch.float16):
+                    prediction = model.forward(img_2_input, img_3_input)
+            else:
+                    prediction = model.forward(img_2_input, img_3_input)
+
             prediction = prediction[("depth", 0)]
             prediction = (
                             torch.nn.functional.interpolate(
